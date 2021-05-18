@@ -35,12 +35,3 @@ dependencies {
 jar{
     from sourceSets.main.allSource
 }
-
-publishing {
-    publications {
-        gpr(MavenPublication) {
-            from(components.java)
-        }
-    }
-}
-

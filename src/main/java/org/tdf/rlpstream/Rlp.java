@@ -71,8 +71,7 @@ public class Rlp {
     }
 
     public static RlpList decodeList(byte[] bin) {
-        long streamId = RlpStream.decodeElement(bin, 0, true);
-        return new RlpList(bin, streamId);
+        return new RlpList(bin, 0, bin.length, 0);
     }
 
     public static byte[] encodeElements(byte[]... elements) {
@@ -132,12 +131,12 @@ public class Rlp {
     }
 
     public static String decodeString(byte[] bin) {
-        long streamId = RlpStream.decodeElement(bin, 0, true);
+        long streamId = RlpStream.decodeElement(bin, 0, bin.length, true);
         return new String(RlpStream.asBytes(bin, streamId), StandardCharsets.UTF_8);
     }
 
     public static long decodeLong(byte[] raw) {
-        long id = RlpStream.decodeElement(raw, 0, true);
+        long id = RlpStream.decodeElement(raw, 0, raw.length, true);
         return RlpStream.asLong(raw, id);
     }
 
@@ -179,17 +178,17 @@ public class Rlp {
     }
 
     public static BigInteger decodeBigInteger(byte[] bin) {
-        long streamId = RlpStream.decodeElement(bin, 0, true);
+        long streamId = RlpStream.decodeElement(bin, 0, bin.length, true);
         return RlpStream.asBigInteger(bin, streamId);
     }
 
     public static <T> T decode(byte[] bin, Class<T> clazz) {
-        long streamId = RlpStream.decodeElement(bin, 0, true);
+        long streamId = RlpStream.decodeElement(bin, 0, bin.length, true);
         return RlpStream.decode(bin, streamId, clazz);
     }
 
     public static byte[] decodeBytes(byte[] bin) {
-        long streamId = RlpStream.decodeElement(bin, 0, true);
+        long streamId = RlpStream.decodeElement(bin, 0, bin.length, true);
         return RlpStream.asBytes(bin, streamId);
     }
 
@@ -224,10 +223,10 @@ public class Rlp {
         if (o instanceof Long)
             return encodeLong((Long) o);
 
-        if(o instanceof Collection) {
+        if (o instanceof Collection) {
             byte[][] elements = new byte[((Collection<?>) o).size()][];
             int i = 0;
-            for(Object obj: (Collection) o) {
+            for (Object obj : (Collection) o) {
                 elements[i++] = encode(obj);
             }
             return encodeElements(elements);

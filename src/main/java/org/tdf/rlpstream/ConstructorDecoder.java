@@ -5,7 +5,8 @@ import lombok.SneakyThrows;
 import java.lang.reflect.Constructor;
 import java.util.function.BiFunction;
 
-import static org.tdf.rlpstream.Constants.EOF;
+import static org.tdf.rlpstream.StreamId.isEOF;
+
 
 public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
     private final Constructor<T> constructor;
@@ -22,11 +23,11 @@ public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
         Object[] args = new Object[constructor.getParameterCount()];
         long[] children = new long[args.length];
 
-        long j = streamId & 0xffffffffL;
+        long j = streamId;
         int c = 0;
         while (true) {
             j = RlpStream.iterateList(bin, streamId, j);
-            if (j == EOF)
+            if (isEOF(j))
                 break;
             if (c >= children.length)
                 throw new RuntimeException("constructor arguments length not match to rlp list size");

@@ -51,8 +51,6 @@ public final class Constants {
      */
     public static final int OFFSET_LONG_LIST = 0xf7;
 
-    public static final long EOF = 0xffffffffffffffffL;
-
     public static final byte[] NULL = new byte[]{(byte) 0x80};
     public static final byte[] ONE = new byte[]{0x01};
     public static final byte[] EMPTY = new byte[0];
@@ -60,5 +58,6 @@ public final class Constants {
 
     public static final long OFFSET_MASK = 0x7fffffffL;
     public static final long SIZE_MASK = 0x7fffffffL << 32;
+    public static final long EOF_MASK = 0x80000000L;
     public static final long LIST_SIGN_MASK = 1L << 63;
 }
