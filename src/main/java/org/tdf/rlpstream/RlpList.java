@@ -1,5 +1,6 @@
 package org.tdf.rlpstream;
 
+import java.math.BigInteger;
 import java.util.Collection;
 
 public class RlpList {
@@ -101,6 +102,30 @@ public class RlpList {
     public <T> T valueAt(int idx, Class<T> clazz) {
         long streamId = getChildren(idx);
         return RlpStream.decode(bin, streamId, clazz);
+    }
+
+    public byte byteAt(int idx) {
+        return valueAt(idx, Byte.class);
+    }
+
+    public int intAt(int idx) {
+        return valueAt(idx, Integer.class);
+    }
+
+    public short shortAt(int idx) {
+        return valueAt(idx, Short.class);
+    }
+
+    public long longAt(int idx) {
+        return valueAt(idx, Long.class);
+    }
+
+    public String stringAt(int idx) {
+        return valueAt(idx, String.class);
+    }
+
+    public BigInteger bigIntAt(int idx) {
+        return valueAt(idx, BigInteger.class);
     }
 
     public <T> T as(Class<T> clazz) {
