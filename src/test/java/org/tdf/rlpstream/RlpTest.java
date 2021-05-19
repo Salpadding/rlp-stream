@@ -277,4 +277,13 @@ public class RlpTest {
 
         assert Arrays.equals(bytes, encoded);
     }
+
+    @Test
+    public void  testDecodeOneItem() throws Exception{
+        String hex = "000080c180000000000000000000000042699b1104e93abf0008be55f912c2ff";
+        byte[] bytes = Hex.decodeHex(hex);
+        long el = RlpStream.decodeElement(bytes, 3, bytes.length, false);
+//        assertEquals(1, el.size());
+//        assertEquals(0, Util.rlpDecodeInt(el.get(0)));
+    }
 }

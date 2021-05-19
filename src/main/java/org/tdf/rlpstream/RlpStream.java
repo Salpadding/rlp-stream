@@ -152,9 +152,14 @@ public class RlpStream {
                 children.add(j);
             }
             Class<?> elementType = clazz.getComponentType();
-            Object res = Array.newInstance(clazz.getComponentType(), children.size());
+            Object res = Array.newInstance(elementType, children.size());
             for (int i = 0; i < children.size(); i++) {
-                Array.set(res, i, decode(bin, children.get(i), elementType));
+                Object o = decode(bin, children.get(i), elementType);
+                try {
+                    Array.set(res, i, o);
+                } catch (Exception e) {
+                    throw new RuntimeException("set array entry failed type " + elementType + " expected while " + o + " received");
+                }
             }
             return (T) res;
         }
@@ -254,24 +259,15 @@ public class RlpStream {
     public static long iterateList(byte[] bin, long listStreamId, long prev) {
         int listSize = StreamId.sizeOf(listStreamId);
         int listOffset = StreamId.offsetOf(listStreamId);
+        int listLimit = listSize + listOffset;
+
         int prevSize = prev == listStreamId ? 0 : StreamId.sizeOf(prev);
         int prevOffset = StreamId.offsetOf(prev);
 
         if (listSize + listOffset == prevSize + prevOffset) {
             return EOF_MASK;
         }
-
-        long next = decodeElement(bin, (prevSize + prevOffset));
-        int nextSize = StreamId.sizeOf(next);
-        int nextOffSet = StreamId.offsetOf(next);
-        if (nextSize + nextOffSet > listSize + listOffset)
-            throw new RuntimeException("invalid list, size overflow");
-        return next;
-    }
-
-
-    public static long decodeElement(byte[] bin, int rawOffset) {
-        return decodeElement(bin, rawOffset, bin.length, false);
+        return decodeElement(bin, (prevSize + prevOffset), listLimit, false);
     }
 
     public static long decodeElement(byte[] bin, int rawOffset, int rawLimit, boolean full) {

@@ -1,20 +1,35 @@
 package org.tdf.rlpstream;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class RlpList {
     private final byte[] bin;
     private final long streamId; // rawId = (rawSize << 32)| rawOffset
-    private final List<Long> children; // stream id of children
+    private long[] children; // stream id of children
+    private int childrenCnt;
+
+    private void pushChildren(long streamId) {
+        if(children.length == childrenCnt) {
+            long[] tmp = children;
+            this.children = new long[tmp.length * 2];
+            System.arraycopy(tmp, 0, this.children, 0, childrenCnt);
+        }
+        children[childrenCnt++] = streamId;
+    }
+
+    private long getChildren(int index) {
+        if(index >= childrenCnt)
+            throw new RuntimeException("array index overflow");
+        return children[index];
+    }
+
 
     public RlpList(byte[] bin, long streamId, int bufSize) {
         this.streamId = streamId;
         this.bin = bin;
         if(!StreamId.isList(streamId))
             throw new RuntimeException("not a rlp list");
-        this.children = new ArrayList<>(bufSize);
+        this.children = new long[Math.max(bufSize, 1)];
         
         long now = this.streamId;
         while (true) {
@@ -22,7 +37,7 @@ public class RlpList {
             if (StreamId.isEOF(now)) {
                 break;
             }
-            children.add(now);
+            pushChildren(now);
         }        
     }
 
@@ -44,29 +59,23 @@ public class RlpList {
         );
     }
 
-    public static RlpList fromElements(byte[]... elements) {
-        return fromEncoded(
-            Rlp.encodeElements(elements)
-        );
-    }
-
     public int size() {
-        return children.size();
+        return childrenCnt;
     }
 
     public boolean isNullAt(int idx) {
-        long streamId = children.get(idx);
+        long streamId = getChildren(idx);
         int size = StreamId.sizeOf(streamId);
         return size == 0 && !StreamId.isList(streamId);
     }
 
     public boolean isListAt(int idx) {
-        long streamId = children.get(idx);
+        long streamId = getChildren(idx);
         return StreamId.isList(streamId);
     }
 
     public RlpList listAt(int idx) {
-        long streamId = children.get(idx);
+        long streamId = getChildren(idx);
         int prefixSize = StreamId.prefixSizeOf(bin, streamId);
         int rawOffset = StreamId.offsetOf(streamId) - prefixSize;
         int rawSize = StreamId.sizeOf(streamId) + prefixSize;
@@ -74,7 +83,7 @@ public class RlpList {
     }
 
     public byte[] rawAt(int idx) {
-        long streamId = children.get(idx);
+        long streamId = getChildren(idx);
         int prefixSize = StreamId.prefixSizeOf(bin, streamId);
         int rawOffset = StreamId.offsetOf(streamId) - prefixSize;
         int rawSize = StreamId.sizeOf(streamId) + prefixSize;
@@ -85,8 +94,13 @@ public class RlpList {
     }
 
     public byte[] bytesAt(int idx) {
-        long streamId = children.get(idx);
+        long streamId = getChildren(idx);
         return RlpStream.asBytes(bin, streamId);
+    }
+
+    public <T> T valueAt(int idx, Class<T> clazz) {
+        long streamId = getChildren(idx);
+        return RlpStream.decode(bin, streamId, clazz);
     }
 
     public <T> T as(Class<T> clazz) {
