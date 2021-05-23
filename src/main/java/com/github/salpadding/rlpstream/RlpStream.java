@@ -121,6 +121,8 @@ class RlpStream {
             }
         }
 
+        Constructor<T> creator = null;
+
         for (int i = 0; i < clazz.getConstructors().length; i++) {
             Constructor<T> con = (Constructor<T>) clazz.getConstructors()[i];
             if (con.getParameterCount() == 0) {
@@ -129,10 +131,16 @@ class RlpStream {
             if (con.isAnnotationPresent(RlpCreator.class)) {
                 if (!isList)
                     throw new RuntimeException("rlp list expected when decode as class " + clazz);
-                ConstructorDecoder<T> de = new ConstructorDecoder<>(con);
-                addDecoder(clazz, de);
-                return de.apply(bin, streamId);
+                if(creator == null || creator.getParameterCount() < con.getParameterCount()) {
+                    creator = con;
+                }
             }
+        }
+
+        if(creator != null) {
+            ConstructorDecoder<T> de = new ConstructorDecoder<>(creator);
+            addDecoder(clazz, de);
+            return de.apply(bin, streamId);
         }
 
         if (clazz.isAnnotationPresent(RlpProps.class)) {
