@@ -3,7 +3,7 @@ plugins {
     id("maven-publish")
 }
 
-group 'org.tdf'
+group 'com.github.salpadding'
 version '1.0.0'
 
 repositories {

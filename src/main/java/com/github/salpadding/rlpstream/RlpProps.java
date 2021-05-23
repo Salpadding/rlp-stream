@@ -1,11 +1,13 @@
-package org.tdf.rlpstream;
+package com.github.salpadding.rlpstream;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RlpCreator {
+public @interface RlpProps {
+    String[] value() default {};
 }
+

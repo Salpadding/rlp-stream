@@ -1,4 +1,4 @@
-package org.tdf.rlpstream;
+package com.github.salpadding.rlpstream;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;

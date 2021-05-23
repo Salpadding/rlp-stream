@@ -1,4 +1,6 @@
-package org.tdf.rlpstream;
+package com.github.salpadding.rlpstream;
+
+import java.math.BigInteger;
 
 public final class Constants {
     /**
@@ -8,6 +10,14 @@ public final class Constants {
      * string. The range of the first byte is thus [0x80, 0xb7].
      */
     public static final int OFFSET_SHORT_ITEM = 0x80;
+
+    /**
+     * [0x80]
+     * If a string is 0-55 bytes long, the RLP encoding consists of a single
+     * byte with value 0x80 plus the length of the string followed by the
+     * string. The range of the first byte is thus [0x80, 0xb7].
+     */
+    public static final BigInteger OFFSET_SHORT_ITEM_BN = BigInteger.valueOf(OFFSET_SHORT_ITEM);
 
     /**
      * Reason for threshold according to Vitalik Buterin:
@@ -52,6 +62,7 @@ public final class Constants {
     public static final int OFFSET_LONG_LIST = 0xf7;
 
     public static final byte[] NULL = new byte[]{(byte) 0x80};
+    public static final byte[] EMPTY_LIST = new byte[]{(byte) 0xc0};
     public static final byte[] ONE = new byte[]{0x01};
     public static final byte[] EMPTY = new byte[0];
 

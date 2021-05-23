@@ -1,11 +1,9 @@
-package org.tdf.rlpstream;
+package com.github.salpadding.rlpstream;
 
 import lombok.SneakyThrows;
 
 import java.lang.reflect.Constructor;
 import java.util.function.BiFunction;
-
-import static org.tdf.rlpstream.StreamId.isEOF;
 
 
 public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
@@ -27,7 +25,7 @@ public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
         int c = 0;
         while (true) {
             j = RlpStream.iterateList(bin, streamId, j);
-            if (isEOF(j))
+            if (StreamId.isEOF(j))
                 break;
             if (c >= children.length)
                 throw new RuntimeException("constructor arguments length not match to rlp list size");

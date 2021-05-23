@@ -1,4 +1,4 @@
-package org.tdf.rlpstream;
+package com.github.salpadding.rlpstream;
 
 import lombok.SneakyThrows;
 
@@ -8,13 +8,11 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static org.tdf.rlpstream.Constants.*;
-
 // reduce memory copy when parse rlp
 // represent rlp element by
 // streamid = LIST SIGN | raw size | raw offset
 // list sign bit | prefix size(0x00 ~ 0x7f) << 56 | size << 32 | offset, MSG of rlp list will be 1
-public class RlpStream {
+class RlpStream {
     static Map<Class<?>, BiFunction<byte[], Long, ?>> DECODER = new HashMap<>();
     static Map<Class<?>, Function<?, byte[]>> ENCODER = new HashMap<>();
 
@@ -30,108 +28,43 @@ public class RlpStream {
         ENCODER = m;
     }
 
-    public static BigInteger asBigInteger(byte[] bin, long streamId) {
-        if (streamId < 0)
-            throw new RuntimeException("not a rlp item");
-        byte[] bytes = asBytes(bin, streamId);
-        if (bytes.length == 0)
-            return BigInteger.ZERO;
-
-        int firstNoZero = -1;
-        // no leading zero
-        for (int i = 0; i < bytes.length; i++) {
-            if (bytes[i] != 0) {
-                firstNoZero = i;
-                break;
-            }
-        }
-        if (firstNoZero != 0)
-            throw new RuntimeException("leading zero found");
-        return new BigInteger(1, bytes);
-    }
-
-    public static long asLong(byte[] bin, long streamId) {
-        if (streamId < 0)
-            throw new RuntimeException("not a rlp item");
-        // rlp number cannot starts with zero
-        long r = 0;
-        int offset = StreamId.offsetOf(streamId);
-        int size = StreamId.sizeOf(streamId);
-
-        if (size == 0)
-            return 0;
-
-        if (size > 8)
-            throw new RuntimeException("number too big, cannot convert to long");
-
-        int firstNoZero = -1;
-
-        // no leading zero
-        for (int i = 0; i < size; i++) {
-            if (bin[offset + i] != 0) {
-                firstNoZero = i;
-                break;
-            }
-        }
-
-        if (firstNoZero != 0)
-            throw new RuntimeException("leading zero found");
-
-        for (int i = 0; i < size; i++) {
-            long b = bin[offset + size - 1 - i] & 0xffL;
-            r |= b << (i * 8);
-        }
-        return r;
-    }
-
 
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    public static <T> T decode(byte[] bin, long streamId, Class<T> clazz) {
+    static <T> T decode(byte[] bin, long streamId, Class<T> clazz) {
         BiFunction<byte[], Long, T> decoder = (BiFunction<byte[], Long, T>) DECODER.get(clazz);
         if (decoder != null)
             return decoder.apply(bin, streamId);
+
         int size = StreamId.sizeOf(streamId);
         boolean isList = StreamId.isList(streamId);
 
         if (clazz == boolean.class || clazz == Boolean.class) {
-            long l = asLong(bin, streamId);
-            if (Long.compareUnsigned(l, 1L) > 0)
-                throw new RuntimeException("number too big, not a rlp boolean");
-            return (T) Boolean.valueOf(l != 0);
+            return (T) Boolean.valueOf(StreamId.asBoolean(bin, streamId));
         }
         if (clazz == Byte.class || clazz == byte.class) {
-            long l = asLong(bin, streamId);
-            if (Long.compareUnsigned(l, 0xffL) > 0)
-                throw new RuntimeException("number too big, not a byte");
-            return (T) Byte.valueOf((byte) l);
+            return (T) Byte.valueOf(StreamId.asByte(bin, streamId));
         }
         if (clazz == Short.class || clazz == short.class) {
-            long l = asLong(bin, streamId);
-            if (Long.compareUnsigned(l, 0xffffL) > 0)
-                throw new RuntimeException("number too big, not a short");
-            return (T) Short.valueOf((short) l);
+            return (T) Short.valueOf(StreamId.asShort(bin, streamId));
         }
         if (clazz == Integer.class || clazz == int.class) {
-            long l = asLong(bin, streamId);
-            if (Long.compareUnsigned(l, 0xffffffffL) > 0)
-                throw new RuntimeException("number too big, not a integer");
-            return (T) Integer.valueOf((int) l);
+            return (T) Integer.valueOf(StreamId.asInt(bin, streamId));
         }
         if (clazz == Long.class || clazz == long.class) {
-            long l = asLong(bin, streamId);
+            long l = StreamId.asLong(bin, streamId);
             return (T) Long.valueOf(l);
         }
         if (clazz == byte[].class) {
-            return (T) asBytes(bin, streamId);
+            return (T) StreamId.asBytes(bin, streamId);
         }
         // String is non-null, since we cannot differ between null empty string and null
         if (clazz == String.class) {
-            return (T) new String(asBytes(bin, streamId));
+            return (T) new String(StreamId.asBytes(bin, streamId));
         }
         // big integer is non-null, since we cannot differ between zero and null
         if (clazz == BigInteger.class) {
-            return (T) asBigInteger(bin, streamId);
+            return (T) StreamId.asBigInteger(bin, streamId);
         }
 
 
@@ -168,7 +101,7 @@ public class RlpStream {
         // 1  decoder in cache
 
         // 2. constructor with RlpCreator annotated
-        // 3. clazz
+        // 3. static streamable decoder
 
         // try to create object by constructor
 
@@ -213,7 +146,9 @@ public class RlpStream {
 
             String[] fieldNames = clazz.getAnnotation(RlpProps.class).value();
             Method[] setters = new Method[fieldNames.length];
+            Class<?>[] setterTypes = new Class[fieldNames.length];
             Field[] fields = new Field[fieldNames.length];
+            Method[] allMethods = clazz.getMethods();
 
             for (int i = 0; i < fieldNames.length; i++) {
                 String fieldName = fieldNames[i];
@@ -222,8 +157,15 @@ public class RlpStream {
 
                 // try to set field by setter
                 try {
-                    Method setter = clazz.getMethod(setterName, field.getType());
-                    setters[i] = setter;
+                    Optional<Method> setter =
+                            Arrays.stream(allMethods)
+                                    .filter(m -> m.getName().equals(setterName) && m.getParameterCount() == 1)
+                                    .findFirst();
+
+                    if (setter.isPresent()) {
+                        setters[i] = setter.get();
+                        setterTypes[i] = setter.get().getParameterTypes()[0];
+                    }
                 } catch (Exception ignored) {
 
                 }
@@ -233,7 +175,7 @@ public class RlpStream {
                 fields[i] = field;
             }
 
-            FieldsDecoder<T> de = new FieldsDecoder<>(noArg, setters, fields);
+            FieldsDecoder<T> de = new FieldsDecoder<>(noArg, setters, setterTypes, fields);
             addDecoder(clazz, de);
             return de.apply(bin, streamId);
         }
@@ -256,7 +198,7 @@ public class RlpStream {
      * @param prev
      * @return
      */
-    public static long iterateList(byte[] bin, long listStreamId, long prev) {
+    static long iterateList(byte[] bin, long listStreamId, long prev) {
         int listSize = StreamId.sizeOf(listStreamId);
         int listOffset = StreamId.offsetOf(listStreamId);
         int listLimit = listSize + listOffset;
@@ -265,15 +207,15 @@ public class RlpStream {
         int prevOffset = StreamId.offsetOf(prev);
 
         if (listSize + listOffset == prevSize + prevOffset) {
-            return EOF_MASK;
+            return Constants.EOF_MASK;
         }
         return decodeElement(bin, (prevSize + prevOffset), listLimit, false);
     }
 
-    public static long decodeElement(byte[] bin, int rawOffset, int rawLimit, boolean full) {
+    static long decodeElement(byte[] bin, int rawOffset, int rawLimit, boolean full) {
         int prefix = bin[rawOffset] & 0xff;
 
-        if (prefix < OFFSET_SHORT_ITEM) {
+        if (prefix < Constants.OFFSET_SHORT_ITEM) {
             // prefix size = 0, length = 1
             // assert size
             if (rawOffset + 1 > rawLimit)
@@ -284,21 +226,21 @@ public class RlpStream {
             return (1L << 32) | (Integer.toUnsignedLong(rawOffset));
         }
 
-        if (prefix <= OFFSET_LONG_ITEM) {
+        if (prefix <= Constants.OFFSET_LONG_ITEM) {
             // prefix size = 1, length
-            int length = prefix - OFFSET_SHORT_ITEM;
+            int length = prefix - Constants.OFFSET_SHORT_ITEM;
             if (rawOffset + 1 + length > rawLimit)
                 throw new RuntimeException("invalid rlp");
             if (full && rawOffset + 1 + length != rawLimit)
                 throw new RuntimeException("invalid rlp, unexpected tails");
             // prefix size = 1, actual size = length, LIST_SIGN = false
-            if(length == 1 && (bin[rawOffset + 1] & 0xff) < OFFSET_SHORT_ITEM)
+            if (length == 1 && (bin[rawOffset + 1] & 0xff) < Constants.OFFSET_SHORT_ITEM)
                 throw new RuntimeException("invalid rlp, not a canonical short item");
             return (Integer.toUnsignedLong(length) << 32) | (Integer.toUnsignedLong(rawOffset + 1));
         }
 
-        if (prefix < OFFSET_SHORT_LIST) {
-            int lengthBits = prefix - OFFSET_LONG_ITEM; // length of length the encoded bytes
+        if (prefix < Constants.OFFSET_SHORT_LIST) {
+            int lengthBits = prefix - Constants.OFFSET_LONG_ITEM; // length of length the encoded bytes
             int len = 0;
 
             // MSB of length = bin[offset + 1],
@@ -315,23 +257,23 @@ public class RlpStream {
                 throw new RuntimeException("invalid rlp, unexpected tails");
             // prefix size = 1 + lengthBits, actual size = len, LIST_SIGN =  false
 
-            if (len < SIZE_THRESHOLD)
+            if (len < Constants.SIZE_THRESHOLD)
                 throw new RuntimeException("not a canonical long rlp item, length <= 55");
             return
-                (Integer.toUnsignedLong(len) << 32) | Integer.toUnsignedLong(1 + lengthBits + rawOffset);
+                    (Integer.toUnsignedLong(len) << 32) | Integer.toUnsignedLong(1 + lengthBits + rawOffset);
         }
 
-        if (prefix <= OFFSET_LONG_LIST) {
-            int len = prefix - OFFSET_SHORT_LIST; // length of length the encoded bytes
+        if (prefix <= Constants.OFFSET_LONG_LIST) {
+            int len = prefix - Constants.OFFSET_SHORT_LIST; // length of length the encoded bytes
             // skip preifx
             if (rawOffset + 1 + len > rawLimit)
                 throw new RuntimeException("invalid rlp");
             if (full && rawOffset + 1 + len != rawLimit)
                 throw new RuntimeException("invalid rlp, unexpected tails");
             // prefix size = 1, acutal size = len, LIST_SIGN = true
-            return (Integer.toUnsignedLong(len) << 32) | LIST_SIGN_MASK | Integer.toUnsignedLong(rawOffset + 1);
+            return (Integer.toUnsignedLong(len) << 32) | Constants.LIST_SIGN_MASK | Integer.toUnsignedLong(rawOffset + 1);
         }
-        int lengthBits = prefix - OFFSET_LONG_LIST; // length of length the encoded list
+        int lengthBits = prefix - Constants.OFFSET_LONG_LIST; // length of length the encoded list
         int len = 0;
         // MSB of length = bin[offset + 1],
         // LSB of length = bin[offset + 1 + lengthBits - 1] = bin[offset + lengthBits]
@@ -341,7 +283,7 @@ public class RlpStream {
             len |= b << (i * 8);
         }
 
-        if (len < SIZE_THRESHOLD)
+        if (len < Constants.SIZE_THRESHOLD)
             throw new RuntimeException("not a canonical long rlp list, length <= 55");
 
         if (rawOffset + 1 + lengthBits + len > rawLimit)
@@ -349,33 +291,18 @@ public class RlpStream {
         if (full && rawOffset + 1 + lengthBits + len != rawLimit)
             throw new RuntimeException("invalid rlp, unexpected tails");
         // prefix size = 1 + lengthBits, acutal size = len, LIST_SIGN = true
-        return (Integer.toUnsignedLong(len) << 32) | LIST_SIGN_MASK | Integer.toUnsignedLong(rawOffset + 1 + lengthBits);
-    }
-
-    public static byte[] rawOf(byte[] bin, long streamId) {
-        int prefixSize = StreamId.prefixSizeOf(bin, streamId);
-        int rawSize = prefixSize + StreamId.sizeOf(streamId);
-        int rawOffset = StreamId.offsetOf(streamId) - prefixSize;
-        byte[] r = new byte[rawSize];
-        System.arraycopy(bin, rawOffset, r, 0, rawSize);
-        return r;
+        return (Integer.toUnsignedLong(len) << 32) | Constants.LIST_SIGN_MASK | Integer.toUnsignedLong(rawOffset + 1 + lengthBits);
     }
 
     // get raw without prefix
-    private static byte[] copyFrom(byte[] bin, long streamId) {
-        int size = (int) ((streamId & SIZE_MASK) >>> 32);
-        int offset = (int) (streamId & OFFSET_MASK);
+    static byte[] copyFrom(byte[] bin, long streamId) {
+        int size = (int) ((streamId & Constants.SIZE_MASK) >>> 32);
+        int offset = (int) (streamId & Constants.OFFSET_MASK);
         if (size == 0)
-            return EMPTY;
+            return Constants.EMPTY;
         byte[] r = new byte[size];
         System.arraycopy(bin, offset, r, 0, size);
         return r;
-    }
-
-    public static byte[] asBytes(byte[] bin, long streamId) {
-        if (streamId < 0)
-            throw new RuntimeException("not a rlp item");
-        return copyFrom(bin, streamId);
     }
 
 }

@@ -1,4 +1,4 @@
-package org.tdf.rlpstream;
+package com.github.salpadding.rlpstream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -8,24 +8,26 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
-import static org.tdf.rlpstream.StreamId.isEOF;
-
 
 @RequiredArgsConstructor
 public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
     private final Constructor<T> constructor;
     private final Method[] setters;
+    private final Class<?>[] setterTypes;
     private final Field[] fields;
 
     @Override
     public T apply(byte[] bin, Long streamId) {
+        if (StreamId.isNull(streamId))
+            return null;
+
         long[] children = new long[setters.length];
         long j = streamId;
         int c = 0;
         while (true) {
             j = RlpStream.
-                iterateList(bin, streamId, j);
-            if (isEOF(j))
+                    iterateList(bin, streamId, j);
+            if (StreamId.isEOF(j))
                 break;
             if (c >= children.length) {
                 throw new RuntimeException("arguments " + Arrays.toString(fields) + " length not match to rlp list size");
@@ -37,7 +39,7 @@ public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
 
         T dst;
         try {
-             dst = constructor.newInstance();
+            dst = constructor.newInstance();
         } catch (Exception e) {
             throw new RuntimeException("unexpected error when create instance by constructor " + constructor);
         }
@@ -45,8 +47,8 @@ public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
             Method setter = setters[i];
             if (setter != null) {
                 try {
-                    setter.invoke(dst, RlpStream.decode(bin, children[i], fields[i].getType()));
-                } catch (Exception e){
+                    setter.invoke(dst, RlpStream.decode(bin, children[i], setterTypes[i]));
+                } catch (Exception e) {
                     throw new RuntimeException("unexpected error when invoke setter " + setter);
                 }
             } else {
