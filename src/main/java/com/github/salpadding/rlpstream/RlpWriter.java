@@ -34,6 +34,10 @@ class RlpWriter {
     }
 
     public static int writeLong(AbstractBuffer buf, long l) {
+        if (l == 0)
+            return writeNull(buf);
+        if (l == 1)
+            return writeOne(buf);
         int leadingZeroBytes = Long.numberOfLeadingZeros(l) / Byte.SIZE;
         int size = 8 - leadingZeroBytes;
         int prefixSize = writePrefix(buf, size, Long.compareUnsigned(l, Integer.toUnsignedLong(Constants.OFFSET_SHORT_ITEM)) < 0, false);
@@ -44,14 +48,17 @@ class RlpWriter {
     }
 
     public static int writeBytes(AbstractBuffer buf, byte[] bytes) {
-        return writeBytes(buf, bytes, 0, bytes == null ? 0 : bytes.length);
+        if (bytes == null || bytes.length == 0)
+            return writeNull(buf);
+        return writeBytes(buf, bytes, 0, bytes.length);
     }
 
     public static int writeBytes(AbstractBuffer buf, byte[] bytes, int offset, int size) {
         if (bytes == null || size == 0) {
-            buf.write((byte) 0x80);
-            return 1;
+            return writeNull(buf);
         }
+        if (size == 1 && bytes[offset] == 1)
+            return writeOne(buf);
         int prefixSize = writePrefix(buf, size, size == 1 && Integer.compareUnsigned(bytes[offset] & 0xff, Constants.OFFSET_SHORT_ITEM) < 0, false);
         for (int i = 0; i < size; i++) {
             buf.write(bytes[i + offset]);
@@ -59,11 +66,30 @@ class RlpWriter {
         return prefixSize + size;
     }
 
+    // true or false, 1 and 0 is frequently used
+    public static int writeOne(AbstractBuffer buf) {
+        buf.write((byte) 0x01);
+        return 1;
+    }
+
+    public static int writeNull(AbstractBuffer buf) {
+        buf.write((byte) 0x80);
+        return 1;
+    }
+
+    public static int writeEmptyList(AbstractBuffer buf) {
+        buf.write((byte) 0xc0);
+        return 1;
+    }
+
     @SneakyThrows
     public static int writeBigInteger(AbstractBuffer buf, BigInteger bn) {
+        if (bn == null || bn.equals(BigInteger.ZERO))
+            return writeNull(buf);
         if (bn.signum() < 0)
             throw new RuntimeException("unexpected negative big integer");
-
+        if (bn.equals(BigInteger.ONE))
+            return writeOne(buf);
         byte[] bytes = bn.toByteArray();
 
         if (bytes[0] == 0) {
@@ -79,6 +105,8 @@ class RlpWriter {
     }
 
     public static int writeElements(AbstractBuffer buf, byte[]... elements) {
+        if (elements.length == 0)
+            return writeEmptyList(buf);
         int cur = buf.getSize();
         buf.setSize(cur + MAX_PREFIX_SIZE);
         int size = 0;
@@ -94,8 +122,10 @@ class RlpWriter {
 
     @SneakyThrows
     public static int writeObject(AbstractBuffer buf, Object o) {
-        if (o instanceof RlpWritable || o == null) {
-            return writeWritable(buf, o == null ? null : ((RlpWritable) o));
+        if (o == null)
+            return writeNull(buf);
+        if (o instanceof RlpWritable) {
+            return ((RlpWritable) o).writeToBuf(buf);
         }
         if (o instanceof byte[]) {
             byte[] bytes = (byte[]) o;
@@ -133,6 +163,8 @@ class RlpWriter {
             int cur = buf.getSize();
             buf.setSize(cur + MAX_PREFIX_SIZE);
             int size = 0;
+            if (Array.getLength(o) == 0)
+                return writeEmptyList(buf);
             for (int i = 0; i < Array.getLength(o); i++) {
                 Object oi = Array.get(o, i);
                 size += writeObject(buf, oi);
@@ -144,7 +176,9 @@ class RlpWriter {
             return size + prefix;
         }
         if (o instanceof Collection) {
-            Collection col = (Collection) o;
+            Collection<?> col = (Collection<?>) o;
+            if (col.size() == 0)
+                return writeEmptyList(buf);
             int cur = buf.getSize();
             buf.setSize(cur + MAX_PREFIX_SIZE);
             int size = 0;
@@ -230,14 +264,5 @@ class RlpWriter {
             buf.write((byte) (size >>> (8 * (lengthOfLength - i - 1))));
         }
         return 1 + lengthOfLength;
-    }
-
-    // write prefix to buf, return the number of bytes writed
-    public static int writeWritable(AbstractBuffer buf, RlpWritable writable) {
-        if (writable == null) {
-            buf.write((byte) 0x80);
-            return 1;
-        }
-        return writable.writeToBuf(buf);
     }
 }

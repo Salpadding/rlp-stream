@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import lombok.NonNull;
+
 import java.io.Closeable;
 import java.io.DataOutput;
 import java.math.BigInteger;
@@ -21,7 +23,7 @@ abstract class AbstractBuffer implements RlpBuffer, Closeable {
     abstract void intoStream(DataOutput output);
 
     @Override
-    public int writeRaw(byte[] bytes) {
+    public int writeRaw(@NonNull byte[] bytes) {
         return RlpWriter.writeRaw(this, bytes);
     }
 
@@ -32,8 +34,7 @@ abstract class AbstractBuffer implements RlpBuffer, Closeable {
 
     @Override
     public int writeList(Object... objects) {
-        Object[] objs = objects;
-        return RlpWriter.writeObject(this, objs);
+        return RlpWriter.writeObject(this, objects);
     }
 
     @Override

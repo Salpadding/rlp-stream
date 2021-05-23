@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.github.salpadding.rlpstream.Constants.NULL;
+import static com.github.salpadding.rlpstream.Constants.*;
 
 
 public class Rlp {
@@ -14,7 +14,7 @@ public class Rlp {
     public static byte[] encodeBytes(byte[] srcData) {
         // [0x80]
         if (srcData == null || srcData.length == 0) {
-            return new byte[]{(byte) Constants.OFFSET_SHORT_ITEM};
+            return NULL;
             // [0x00]
         }
         if (srcData.length == 1 && (srcData[0] & 0xFF) < Constants.OFFSET_SHORT_ITEM) {
@@ -58,6 +58,8 @@ public class Rlp {
     }
 
     public static byte[] encodeElements(Collection<? extends byte[]> elements) {
+        if(elements.size() == 0)
+            return EMPTY_LIST;
         byte[][] array = new byte[elements.size()][];
         int i = 0;
         for (byte[] bytes : elements) {
@@ -71,6 +73,9 @@ public class Rlp {
     }
 
     public static byte[] encodeElements(byte[]... elements) {
+        if(elements.length == 0)
+            return EMPTY_LIST;
+
         int totalLength = 0;
 
         for (int i = 0; i < elements.length; i++)
@@ -113,6 +118,10 @@ public class Rlp {
     }
 
     public static byte[] encodeLong(long l) {
+        if(l == 0)
+            return NULL;
+        if(l == 1)
+            return ONE;
         int leadingZeroBytes = Long.numberOfLeadingZeros(l) / Byte.SIZE;
         byte[] data = new byte[8 - leadingZeroBytes];
         for (int i = data.length - 1; i >= 0; i--) {
@@ -172,8 +181,10 @@ public class Rlp {
     }
 
     public static byte[] encodeBigInteger(BigInteger i) {
-        if (i == null)
+        if (i == null || i.equals(BigInteger.ZERO))
             return NULL;
+        if(i.equals(BigInteger.ONE))
+            return ONE;
         return encodeBytes(Util.asUnsignedByteArray(i));
     }
 
