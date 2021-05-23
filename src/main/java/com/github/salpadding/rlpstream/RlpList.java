@@ -69,8 +69,7 @@ public class RlpList {
 
     public boolean isNullAt(int idx) {
         long streamId = getChildren(idx);
-        int size = StreamId.sizeOf(streamId);
-        return size == 0 && !StreamId.isList(streamId);
+        return StreamId.isNull(streamId);
     }
 
     public boolean isListAt(int idx) {
@@ -80,10 +79,7 @@ public class RlpList {
 
     public RlpList listAt(int idx) {
         long streamId = getChildren(idx);
-        int prefixSize = StreamId.prefixSizeOf(streamId);
-        int rawOffset = StreamId.offsetOf(streamId) - prefixSize;
-        int rawSize = StreamId.sizeOf(streamId) + prefixSize;
-        return new RlpList(bin, rawOffset, rawOffset + rawSize, 0);
+        return StreamId.asList(bin, streamId);
     }
 
     public byte[] rawAt(int idx) {
@@ -132,7 +128,7 @@ public class RlpList {
     }
 
     public <T> T as(Class<T> clazz) {
-        return RlpStream.decode(bin, streamId, clazz);
+        return StreamId.as(bin, streamId, clazz);
     }
 
     public byte[] getEncoded() {
