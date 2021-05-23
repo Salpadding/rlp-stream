@@ -174,5 +174,16 @@ public class LongWrapper implements RlpWritable{
 
 ```
 
+4. write big object to outputstream
+
+
+```java
+class Main {
+    public static void main(String[]args){
+        DataOutput o = new DataOutputStream(new FileOutputStream("data"));
+        Rlp.encode(p, o);
+    }  
+}
+```
 
 

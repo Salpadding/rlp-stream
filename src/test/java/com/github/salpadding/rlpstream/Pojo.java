@@ -2,6 +2,9 @@ package com.github.salpadding.rlpstream;
 
 import org.apache.commons.codec.binary.Hex;
 
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.util.Arrays;
 
 @RlpProps({"first", "second", "child"})
@@ -47,12 +50,15 @@ class Pojo {
         this.child = child;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
         byte[] encoded = Rlp.encode(new Pojo());
         System.out.println(Hex.encodeHexString(encoded));
 
         Pojo p = Rlp.decode(encoded, Pojo.class);
 
         System.out.println(p);
+
+        DataOutput o = new DataOutputStream(new FileOutputStream("data"));
+        Rlp.encode(p, o);
     }
 }
