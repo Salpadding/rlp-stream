@@ -8,7 +8,9 @@ import java.nio.charset.StandardCharsets;
 abstract class AbstractBuffer implements RlpBuffer, Closeable {
     abstract void write(byte b);
 
-    abstract void leftShift(int offset, int size, int shifts);
+    // shifts > 0 -> right shift
+    // shifts < 0 -> left shift
+    abstract void shift(int offset, int size, int shifts);
 
     abstract int getSize();
 

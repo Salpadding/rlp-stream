@@ -152,6 +152,14 @@ public class StreamId {
         return new String(asBytes(bin, streamId), StandardCharsets.UTF_8);
     }
 
+    public static RlpList asList(byte[] bin, long streamId, int cap) {
+        return new RlpList(bin, streamId, cap);
+    }
+
+    public static RlpList asList(byte[] bin, long streamId) {
+        return asList(bin, streamId, 1);
+    }
+
     public static long decodeElement(byte[] bin, int rawOffset, int rawLimit, boolean full) {
         return RlpStream.decodeElement(bin, rawOffset, rawLimit, full);
     }

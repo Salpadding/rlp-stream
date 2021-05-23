@@ -40,7 +40,7 @@ public class BytesBuf extends AbstractBuffer {
 
 
     @Override
-    public void leftShift(int offset, int size, int shifts) {
+    public void shift(int offset, int size, int shifts) {
         System.arraycopy(bin, offset, bin, offset - shifts, size);
     }
 

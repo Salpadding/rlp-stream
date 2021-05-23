@@ -31,7 +31,7 @@ public class FieldsWriter {
         }
         buf.setSize(cur);
         int prefix = writePrefix(buf, size, false, true);
-        buf.leftShift(cur + MAX_PREFIX_SIZE, size, MAX_PREFIX_SIZE - prefix);
+        buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
         buf.setSize(cur + prefix + size);
         return size + prefix;
     }

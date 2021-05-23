@@ -16,9 +16,6 @@ class RlpWriter {
     // write result = LIST_SIGN | prefix size | content size
     static Map<Class<?>, FieldsWriter> OBJECT_WRITERS = new HashMap<>();
 
-    static final int MONO_MASK = 1;
-    static final int LIST_MASK = 2;
-
     // max prefix size = 1(length of length) + 4(length) = 5
     static final int MAX_PREFIX_SIZE = 5;
 
@@ -90,7 +87,7 @@ class RlpWriter {
         }
         buf.setSize(cur);
         int prefix = writePrefix(buf, size, false, true);
-        buf.leftShift(cur + MAX_PREFIX_SIZE, size, MAX_PREFIX_SIZE - prefix);
+        buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
         buf.setSize(cur + prefix + size);
         return size + prefix;
     }
@@ -142,7 +139,7 @@ class RlpWriter {
             }
             buf.setSize(cur);
             int prefix = writePrefix(buf, size, false, true);
-            buf.leftShift(cur + MAX_PREFIX_SIZE, size, MAX_PREFIX_SIZE - prefix);
+            buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
             buf.setSize(cur + prefix + size);
             return size + prefix;
         }
@@ -156,7 +153,7 @@ class RlpWriter {
             }
             buf.setSize(cur);
             int prefix = writePrefix(buf, size, false, true);
-            buf.leftShift(cur + MAX_PREFIX_SIZE, size, MAX_PREFIX_SIZE - prefix);
+            buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
             buf.setSize(cur + prefix + size);
             return size + prefix;
         }
@@ -234,11 +231,6 @@ class RlpWriter {
         }
         return 1 + lengthOfLength;
     }
-
-    public static int writePrefix(AbstractBuffer buf, int size, int isMonoOrList) {
-        return writePrefix(buf, size, (isMonoOrList & MONO_MASK) != 0, (isMonoOrList & LIST_MASK) != 0);
-    }
-
 
     // write prefix to buf, return the number of bytes writed
     public static int writeWritable(AbstractBuffer buf, RlpWritable writable) {

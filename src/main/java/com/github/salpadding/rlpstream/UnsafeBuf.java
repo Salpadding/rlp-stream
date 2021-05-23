@@ -52,8 +52,8 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
     }
 
     @Override
-    void leftShift(int offset, int size, int shifts) {
-        unsafe.copyMemory(this.pointer + offset, this.pointer + offset - shifts, size);
+    void shift(int offset, int size, int shifts) {
+        unsafe.copyMemory(this.pointer + offset, this.pointer + offset + shifts, size);
     }
 
     @Override
