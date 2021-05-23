@@ -8,7 +8,7 @@ import static com.github.salpadding.rlpstream.Constants.*;
 // stream is a inlined object combined with raw binary
 public class StreamId {
     public static boolean isEOF(long streamId) {
-        return (streamId & EOF_MASK) != 0;
+        return streamId == EOF;
     }
 
     public static boolean isNull(long streamId) {
@@ -28,26 +28,14 @@ public class StreamId {
     }
 
 
-    public static int prefixSizeOf(byte[] bin, long streamId) {
-        if (isList(streamId)) {
-            int size = sizeOf(streamId);
-            if (size < SIZE_THRESHOLD)
-                return 1;
-            int noZero = 4 - Integer.numberOfLeadingZeros(size) / 8;
-            return 1 + noZero;
-        }
-        int size = sizeOf(streamId);
-        if (size == 0)
-            return 1;
-        int offset = offsetOf(streamId);
-        if (size == 1 && (bin[offset] & 0xff) < OFFSET_SHORT_ITEM) {
+    public static int prefixSizeOf(long streamId) {
+        if ((streamId & MONO_MASK) != 0) {
             return 0;
         }
-        if (size < SIZE_THRESHOLD) {
+        int size = sizeOf(streamId);
+        if (size < SIZE_THRESHOLD)
             return 1;
-        }
-        int noZero = 4 - Integer.numberOfLeadingZeros(size) / 8;
-        return 1 + noZero;
+        return 5 - Integer.numberOfLeadingZeros(size) / 8;
     }
 
     public static BigInteger asBigInteger(byte[] bin, long streamId) {
@@ -106,7 +94,7 @@ public class StreamId {
 
 
     public static byte[] rawOf(byte[] bin, long streamId) {
-        int prefixSize = prefixSizeOf(bin, streamId);
+        int prefixSize = prefixSizeOf(streamId);
         int rawSize = prefixSize + sizeOf(streamId);
         int rawOffset = offsetOf(streamId) - prefixSize;
         byte[] r = new byte[rawSize];

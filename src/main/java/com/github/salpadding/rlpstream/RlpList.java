@@ -80,7 +80,7 @@ public class RlpList {
 
     public RlpList listAt(int idx) {
         long streamId = getChildren(idx);
-        int prefixSize = StreamId.prefixSizeOf(bin, streamId);
+        int prefixSize = StreamId.prefixSizeOf(streamId);
         int rawOffset = StreamId.offsetOf(streamId) - prefixSize;
         int rawSize = StreamId.sizeOf(streamId) + prefixSize;
         return new RlpList(bin, rawOffset, rawOffset + rawSize, 0);
@@ -138,7 +138,7 @@ public class RlpList {
     public byte[] getEncoded() {
         if (encoded != null)
             return encoded;
-        int prefixSize = StreamId.prefixSizeOf(bin, streamId);
+        int prefixSize = StreamId.prefixSizeOf(streamId);
         int rawOffset = StreamId.offsetOf(streamId) - prefixSize;
         int rawSize = StreamId.sizeOf(streamId) + prefixSize;
         if (rawSize == bin.length) {

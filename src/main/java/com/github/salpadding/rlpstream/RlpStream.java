@@ -6,7 +6,8 @@ import java.lang.reflect.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+
+import static com.github.salpadding.rlpstream.Constants.MONO_MASK;
 
 // reduce memory copy when parse rlp
 // represent rlp element by
@@ -14,18 +15,11 @@ import java.util.function.Function;
 // list sign bit | prefix size(0x00 ~ 0x7f) << 56 | size << 32 | offset, MSG of rlp list will be 1
 class RlpStream {
     static Map<Class<?>, BiFunction<byte[], Long, ?>> DECODER = new HashMap<>();
-    static Map<Class<?>, Function<?, byte[]>> ENCODER = new HashMap<>();
 
     public static <T> void addDecoder(Class<T> clazz, BiFunction<byte[], Long, T> decoder) {
         Map<Class<?>, BiFunction<byte[], Long, ?>> m = new HashMap<>(DECODER);
         m.put(clazz, decoder);
         DECODER = m;
-    }
-
-    public static <T> void addEncoder(Class<T> clazz, Function<T, byte[]> encoder) {
-        Map<Class<?>, Function<?, byte[]>> m = new HashMap<>(ENCODER);
-        m.put(clazz, encoder);
-        ENCODER = m;
     }
 
 
@@ -215,7 +209,7 @@ class RlpStream {
         int prevOffset = StreamId.offsetOf(prev);
 
         if (listSize + listOffset == prevSize + prevOffset) {
-            return Constants.EOF_MASK;
+            return Constants.EOF;
         }
         return decodeElement(bin, (prevSize + prevOffset), listLimit, false);
     }
@@ -231,7 +225,7 @@ class RlpStream {
             if (full && rawOffset + 1 != rawLimit)
                 throw new RuntimeException("invalid rlp, unexpected tails");
             // prefix size = 0, actual size = 1, offset = rawOffset
-            return (1L << 32) | (Integer.toUnsignedLong(rawOffset));
+            return (1L << 32) | (Integer.toUnsignedLong(rawOffset)) | MONO_MASK;
         }
 
         if (prefix <= Constants.OFFSET_LONG_ITEM) {
