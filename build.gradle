@@ -20,16 +20,16 @@ ext{
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    testCompile "commons-codec:commons-codec:${commonsCodecVersion}"
-    testCompile "com.madgag.spongycastle:core:${scastleVersion}" // for rlp encoding
-    testCompile "com.madgag.spongycastle:prov:${scastleVersion}" // for rlp encoding
-    testCompile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    testImplementation "commons-codec:commons-codec:${commonsCodecVersion}"
+    testImplementation "com.madgag.spongycastle:core:${scastleVersion}" // for rlp encoding
+    testImplementation "com.madgag.spongycastle:prov:${scastleVersion}" // for rlp encoding
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 }
 
 jar{
