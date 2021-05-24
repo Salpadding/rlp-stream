@@ -1,4 +1,4 @@
-package com.github.salpadding.rlpstream;
+package com.github.salpadding.rlpstream.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,11 +1,13 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import lombok.SneakyThrows;
 
 import java.io.DataOutput;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -16,7 +18,7 @@ class RlpWriter {
     static final int DEFAULT_INITIAL_CAP = 256;
 
     // write result = LIST_SIGN | prefix size | content size
-    static Map<Class<?>, FieldsWriter> OBJECT_WRITERS = new HashMap<>();
+    static Map<Class<?>, ObjectWriter> OBJECT_WRITERS = new HashMap<>();
 
     // max prefix size = 1(length of length) + 4(length) = 5
     static final int MAX_PREFIX_SIZE = 5;
@@ -193,18 +195,39 @@ class RlpWriter {
             buf.setSize(cur + prefix + size);
             return size + prefix;
         }
-        FieldsWriter w = getWriter(o.getClass());
+        ObjectWriter w = getWriter(o.getClass());
         return w.writeToBuf(buf, o);
     }
 
     @SneakyThrows
-    static FieldsWriter getWriter(Class<?> clazz) {
-        FieldsWriter w = OBJECT_WRITERS.get(clazz);
+    static ObjectWriter getWriter(Class<?> clazz) {
+        ObjectWriter w = OBJECT_WRITERS.get(clazz);
         if (w != null)
             return w;
+        for (Method method : clazz.getMethods()) {
+            if (method.isAnnotationPresent(com.github.salpadding.rlpstream.annotation.RlpWriter.class)) {
+                if (!Modifier.isStatic(method.getModifiers())) {
+                    throw new RuntimeException("RlpWriter of class " + clazz + " method " + method + " should be static");
+                }
+                if (
+                        method.getParameterCount() != 2 ||
+                                !(method.getParameterTypes()[0]).isAssignableFrom(clazz) ||
+                                !(method.getParameterTypes()[1]).isAssignableFrom(RlpBuffer.class) ||
+                                (!int.class.isAssignableFrom(method.getReturnType()) && !Integer.class.isAssignableFrom(method.getReturnType()))
+                )
+                    throw new RuntimeException(
+                            String.format("RlpWriter of class %s method should be int %s(%s obj, %s buf)", clazz.getName(), method.getName(), clazz.getName(), "RlpBuffer")
+                    );
+                w = new StaticMethodWriter(method);
+                Map<Class<?>, ObjectWriter> ws = new HashMap<>(OBJECT_WRITERS);
+                ws.put(clazz, w);
+                OBJECT_WRITERS = ws;
+                return w;
+            }
+        }
+
         if (!clazz.isAnnotationPresent(RlpProps.class))
             throw new RuntimeException(clazz + " is not annotated with RlpProps");
-        Map<Class<?>, FieldsWriter> ws = new HashMap<>(OBJECT_WRITERS);
         String[] fieldNames = clazz.getAnnotation(RlpProps.class).value();
         Method[] getters = new Method[fieldNames.length];
         Field[] fields = new Field[fieldNames.length];
@@ -227,6 +250,7 @@ class RlpWriter {
             fields[i] = field;
         }
         w = new FieldsWriter(getters, fields);
+        Map<Class<?>, ObjectWriter> ws = new HashMap<>(OBJECT_WRITERS);
         ws.put(clazz, w);
         OBJECT_WRITERS = ws;
         return w;

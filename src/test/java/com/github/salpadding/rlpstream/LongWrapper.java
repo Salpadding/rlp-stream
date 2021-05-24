@@ -1,5 +1,6 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import org.apache.commons.codec.binary.Hex;
 
 public class LongWrapper implements RlpWritable{

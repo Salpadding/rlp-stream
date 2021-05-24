@@ -2,6 +2,8 @@ package com.github.salpadding.rlpstream;
 
 import java.math.BigInteger;
 
+import static com.github.salpadding.rlpstream.Constants.NULL;
+
 public interface RlpBuffer {
     int writeObject(Object o);
 
@@ -22,6 +24,10 @@ public interface RlpBuffer {
     int writeList(Object... objects);
 
     int writeRaw(byte[] bytes);
+
+    default int writeNull() {
+        return writeRaw(NULL);
+    }
 
     int writeElements(byte[]... elements);
 }
