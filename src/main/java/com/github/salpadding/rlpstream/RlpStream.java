@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 
 import java.lang.reflect.*;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiFunction;
 
@@ -54,7 +55,7 @@ class RlpStream {
         }
         // String is non-null, since we cannot differ between null empty string and null
         if (clazz == String.class) {
-            return (T) new String(StreamId.asBytes(bin, streamId));
+            return (T) new String(StreamId.asBytes(bin, streamId), StandardCharsets.UTF_8);
         }
         // big integer is non-null, since we cannot differ between zero and null
         if (clazz == BigInteger.class) {

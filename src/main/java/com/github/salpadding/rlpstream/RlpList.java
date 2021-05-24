@@ -5,7 +5,7 @@ import java.util.Collection;
 
 public class RlpList {
     private final byte[] bin;
-    private final long streamId; // rawId = (rawSize << 32)| rawOffset
+    private final long streamId;
     private long[] children; // stream id of children
     private int childrenCnt;
     private byte[] encoded;
