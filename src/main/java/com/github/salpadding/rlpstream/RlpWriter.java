@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 class RlpWriter {
+    static final int DEFAULT_INITIAL_CAP = 256;
+
     // write result = LIST_SIGN | prefix size | content size
     static Map<Class<?>, FieldsWriter> OBJECT_WRITERS = new HashMap<>();
 
@@ -20,14 +22,14 @@ class RlpWriter {
     static final int MAX_PREFIX_SIZE = 5;
 
     public static byte[] encode(Object o) {
-        try (AbstractBuffer buf = new UnsafeBuf(256)) {
+        try (AbstractBuffer buf = new UnsafeBuf(DEFAULT_INITIAL_CAP)) {
             writeObject(buf, o);
             return buf.toByteArray();
         }
     }
 
     public static void encode(Object o, DataOutput out) {
-        try (AbstractBuffer buf = new UnsafeBuf(256)) {
+        try (AbstractBuffer buf = new UnsafeBuf(DEFAULT_INITIAL_CAP)) {
             writeObject(buf, o);
             buf.intoStream(out);
         }
@@ -232,13 +234,13 @@ class RlpWriter {
 
 
     public static int writePrefix(AbstractBuffer buf, int size, boolean mono, boolean isList) {
+        if (mono) {
+            return 0;
+        }
+
         if (size == 0) {
             buf.write(isList ? ((byte) 0xc0) : ((byte) 0x80));
             return 1;
-        }
-
-        if (mono) {
-            return 0;
         }
 
         int base0 = isList ? Constants.OFFSET_SHORT_LIST : Constants.OFFSET_SHORT_ITEM;

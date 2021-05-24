@@ -72,6 +72,11 @@ public class Rlp {
         return new RlpList(bin, 0, bin.length, 0);
     }
 
+    public static RlpList decodeList(byte[] bin, int offset) {
+        long streamId = RlpStream.decodeElement(bin, offset, bin.length, false);
+        return new RlpList(bin, streamId, 0);
+    }
+
     public static byte[] encodeElements(byte[]... elements) {
         if(elements.length == 0)
             return EMPTY_LIST;
@@ -142,13 +147,30 @@ public class Rlp {
         return new String(StreamId.asBytes(bin, streamId), StandardCharsets.UTF_8);
     }
 
+    public static String decodeString(byte[] bin, int offset) {
+        long streamId = RlpStream.decodeElement(bin, offset, bin.length, true);
+        return new String(StreamId.asBytes(bin, streamId), StandardCharsets.UTF_8);
+    }
+
     public static long decodeLong(byte[] raw) {
         long id = RlpStream.decodeElement(raw, 0, raw.length, true);
         return StreamId.asLong(raw, id);
     }
 
+    public static long decodeLong(byte[] raw, int offset) {
+        long id = RlpStream.decodeElement(raw, offset, raw.length, false);
+        return StreamId.asLong(raw, id);
+    }
+
     public static int decodeInt(byte[] raw) {
         long l = decodeLong(raw);
+        if (Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
+            throw new RuntimeException("decode as int failed, numeric overflow");
+        return (int) l;
+    }
+
+    public static int decodeInt(byte[] raw, int offset) {
+        long l = decodeLong(raw, offset);
         if (Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
             throw new RuntimeException("decode as int failed, numeric overflow");
         return (int) l;
@@ -161,8 +183,22 @@ public class Rlp {
         return (short) l;
     }
 
+    public static short decodeShort(byte[] raw, int offset) {
+        long l = decodeLong(raw, offset);
+        if (Long.compareUnsigned(l, 0xFFFFL) > 0)
+            throw new RuntimeException("decode as short failed, numeric overflow");
+        return (short) l;
+    }
+
     public static byte decodeByte(byte[] raw) {
         long l = decodeLong(raw);
+        if (Long.compareUnsigned(l, 0xFFL) > 0)
+            throw new RuntimeException("decode as byte failed, numeric overflow");
+        return (byte) l;
+    }
+
+    public static byte decodeByte(byte[] raw, int offset) {
+        long l = decodeLong(raw, offset);
         if (Long.compareUnsigned(l, 0xFFL) > 0)
             throw new RuntimeException("decode as byte failed, numeric overflow");
         return (byte) l;
@@ -193,9 +229,24 @@ public class Rlp {
         return StreamId.asBigInteger(bin, streamId);
     }
 
+    public static BigInteger decodeBigInteger(byte[] bin, int offset) {
+        long streamId = RlpStream.decodeElement(bin, offset, bin.length, false);
+        return StreamId.asBigInteger(bin, streamId);
+    }
+
+    public static <T> T decode(byte[] bin, int offset, Class<T> clazz) {
+        long streamId = RlpStream.decodeElement(bin, offset, bin.length, false);
+        return RlpStream.decode(bin, streamId, clazz);
+    }
+
     public static <T> T decode(byte[] bin, Class<T> clazz) {
         long streamId = RlpStream.decodeElement(bin, 0, bin.length, true);
         return RlpStream.decode(bin, streamId, clazz);
+    }
+
+    public static byte[] decodeBytes(byte[] bin, int offset) {
+        long streamId = RlpStream.decodeElement(bin, offset, bin.length, false);
+        return StreamId.asBytes(bin, streamId);
     }
 
     public static byte[] decodeBytes(byte[] bin) {

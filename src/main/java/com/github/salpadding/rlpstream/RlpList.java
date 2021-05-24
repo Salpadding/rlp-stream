@@ -26,7 +26,7 @@ public class RlpList {
     }
 
 
-    public RlpList(byte[] bin, long streamId, int bufSize) {
+    RlpList(byte[] bin, long streamId, int bufSize) {
         this.streamId = streamId;
         this.bin = bin;
         if (!StreamId.isList(streamId))
@@ -43,7 +43,7 @@ public class RlpList {
         }
     }
 
-    public RlpList(byte[] encoded, int rawOffset, int rawLimit, int bufSize) {
+   RlpList(byte[] encoded, int rawOffset, int rawLimit, int bufSize) {
         this(
                 encoded,
                 RlpStream.decodeElement(encoded, rawOffset, rawLimit, true),
