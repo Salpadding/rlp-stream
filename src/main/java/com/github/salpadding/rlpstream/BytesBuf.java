@@ -24,24 +24,29 @@ public class BytesBuf extends AbstractBuffer {
     @Override
     public void setSize(int size) {
         this.size = size;
+        tryExtend();
     }
 
     private int size;
 
-    @Override
-    public void write(byte b) {
-        if (size == bin.length) {
+    private void tryExtend() {
+        while (size >= bin.length) {
             byte[] tmp = new byte[size * 2];
             System.arraycopy(bin, 0, tmp, 0, bin.length);
             this.bin = tmp;
         }
+    }
+
+    @Override
+    public void write(byte b) {
+        tryExtend();
         bin[size++] = b;
     }
 
 
     @Override
     public void shift(int offset, int size, int shifts) {
-        System.arraycopy(bin, offset, bin, offset - shifts, size);
+        System.arraycopy(bin, offset, bin, offset + shifts, size);
     }
 
     @Override
