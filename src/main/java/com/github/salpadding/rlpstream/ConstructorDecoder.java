@@ -18,6 +18,8 @@ public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
     @Override
     @SneakyThrows
     public T apply(byte[] bin, Long streamId) {
+        if(StreamId.isNull(streamId))
+            return null;
         Object[] args = new Object[constructor.getParameterCount()];
         long[] children = new long[args.length];
 

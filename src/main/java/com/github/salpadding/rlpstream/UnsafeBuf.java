@@ -31,22 +31,23 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
         this.cap = cap;
     }
 
-
-    @Override
-    void write(byte b) {
-        if (size == cap) {
+    private void tryExtend() {
+        while (size >= cap) {
             int newCap = cap * 2;
             if (newCap < 0) {
                 close();
                 throw new RuntimeException("memory overflow");
             }
-            long newPointer = unsafe.allocateMemory(newCap);
-            unsafe.setMemory(newPointer, newCap, (byte) 0);
-            unsafe.copyMemory(this.pointer, newPointer, this.cap);
-            unsafe.freeMemory(this.pointer);
+            long newPointer = unsafe.reallocateMemory(pointer, newCap);
+            unsafe.setMemory(newPointer + cap, newCap - cap, (byte) 0);
             this.pointer = newPointer;
             this.cap = newCap;
         }
+    }
+
+    @Override
+    void write(byte b) {
+        tryExtend();
         unsafe.putByte(pointer + size, b);
         this.size++;
     }
@@ -64,6 +65,7 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
     @Override
     void setSize(int size) {
         this.size = size;
+        tryExtend();
     }
 
     @Override
