@@ -159,12 +159,12 @@ class RlpWriter {
             return writeBytes(buf, s.getBytes(StandardCharsets.UTF_8));
         }
         if (o.getClass().isArray()) {
+            if (Array.getLength(o) == 0)
+                return writeEmptyList(buf);
             // write empty prefix
             int cur = buf.getSize();
             buf.setSize(cur + MAX_PREFIX_SIZE);
             int size = 0;
-            if (Array.getLength(o) == 0)
-                return writeEmptyList(buf);
             for (int i = 0; i < Array.getLength(o); i++) {
                 Object oi = Array.get(o, i);
                 size += writeObject(buf, oi);

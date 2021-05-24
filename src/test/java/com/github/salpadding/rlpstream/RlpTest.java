@@ -23,6 +23,7 @@ public class RlpTest {
         byte[] expected = {(byte) 0x80};
         byte[] data = Rlp.encodeByte((byte) 0);
         assertArrayEquals(expected, data);
+        assertArrayEquals(expected, Rlp.encode(Byte.valueOf((byte) 0)));
 
         byte[] expected2 = {(byte) 0x78};
         data = Rlp.encodeByte((byte) 120);
