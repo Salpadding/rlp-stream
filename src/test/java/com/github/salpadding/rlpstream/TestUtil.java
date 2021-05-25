@@ -1,6 +1,7 @@
 package com.github.salpadding.rlpstream;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.SneakyThrows;
@@ -20,5 +21,11 @@ public class TestUtil {
         if(in.read(all) != all.length)
             throw new RuntimeException("read failed");
         return all;
+    }
+    
+    public static void readRlpTestJson(JsonNode node) {
+        for (JsonNode jsonNode : node) {
+            
+        }
     }
 }
