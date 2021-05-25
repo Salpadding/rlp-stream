@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
+
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
@@ -40,7 +42,7 @@ public class StreamId {
 
     public static BigInteger asBigInteger(byte[] bin, long streamId) {
         if (streamId < 0)
-            throw new RuntimeException("not a rlp item");
+            throw new RlpDecodeException("not a rlp item");
         byte[] bytes = asBytes(bin, streamId);
         if (bytes.length == 0)
             return BigInteger.ZERO;
@@ -54,23 +56,21 @@ public class StreamId {
             }
         }
         if (firstNoZero != 0)
-            throw new RuntimeException("leading zero found");
+            throw new RlpDecodeException("leading zero found");
         return new BigInteger(1, bytes);
     }
 
-    public static long asLong(byte[] bin, long streamId) {
-        if (streamId < 0)
-            throw new RuntimeException("not a rlp item");
+
+    static long asLong(byte[] bin, int offset, int size) {
+
         // rlp number cannot starts with zero
         long r = 0;
-        int offset = offsetOf(streamId);
-        int size = sizeOf(streamId);
 
         if (size == 0)
             return 0;
 
         if (size > 8)
-            throw new RuntimeException("number too big, cannot convert to long");
+            throw new RlpDecodeException("number too big, cannot convert to long");
 
         int firstNoZero = -1;
 
@@ -83,13 +83,22 @@ public class StreamId {
         }
 
         if (firstNoZero != 0)
-            throw new RuntimeException("leading zero found");
+            throw new RlpDecodeException("leading zero found");
 
         for (int i = 0; i < size; i++) {
             long b = bin[offset + size - 1 - i] & 0xffL;
             r |= b << (i * 8);
         }
         return r;
+    }
+
+    public static long asLong(byte[] bin, long streamId) {
+        if (streamId < 0)
+            throw new RlpDecodeException("not a rlp item");
+        // rlp number cannot starts with zero
+        int offset = offsetOf(streamId);
+        int size = sizeOf(streamId);
+        return asLong(bin, offset, size);
     }
 
 
@@ -104,35 +113,35 @@ public class StreamId {
 
     public static byte[] asBytes(byte[] bin, long streamId) {
         if (streamId < 0)
-            throw new RuntimeException("not a rlp item");
+            throw new RlpDecodeException("not a rlp item");
         return RlpStream.copyFrom(bin, streamId);
     }
 
     public static int asInt(byte[] bin, long streamId) {
         long l = StreamId.asLong(bin, streamId);
         if (Long.compareUnsigned(l, 0xffffffffL) > 0)
-            throw new RuntimeException("number too big, not a integer");
+            throw new RlpDecodeException("number too big, not a integer");
         return (int) l;
     }
 
     public static short asShort(byte[] bin, long streamId) {
         long l = StreamId.asLong(bin, streamId);
         if (Long.compareUnsigned(l, 0xffffL) > 0)
-            throw new RuntimeException("number too big, not a short");
+            throw new RlpDecodeException("number too big, not a short");
         return (short) l;
     }
 
     public static byte asByte(byte[] bin, long streamId) {
         long l = StreamId.asLong(bin, streamId);
         if (Long.compareUnsigned(l, 0xffL) > 0)
-            throw new RuntimeException("number too big, not a byte");
+            throw new RlpDecodeException("number too big, not a byte");
         return (byte) l;
     }
 
     public static boolean asBoolean(byte[] bin, long streamId) {
         long l = StreamId.asLong(bin, streamId);
         if (Long.compareUnsigned(l, 1L) > 0)
-            throw new RuntimeException("number too big, not a boolean");
+            throw new RlpDecodeException("number too big, not a boolean");
         return l != 0;
     }
 

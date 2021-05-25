@@ -1,5 +1,6 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
 import lombok.RequiredArgsConstructor;
 
 import java.lang.reflect.Constructor;
@@ -26,22 +27,22 @@ public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
         int c = 0;
         while (true) {
             j = RlpStream.
-                    iterateList(bin, streamId, j);
+                iterateList(bin, streamId, j);
             if (StreamId.isEOF(j))
                 break;
             if (c >= children.length) {
-                throw new RuntimeException("arguments " + Arrays.toString(fields) + " length not match to rlp list size");
+                throw new RlpDecodeException("arguments " + Arrays.toString(fields) + " length not match to rlp list size");
             }
             children[c++] = j;
         }
         if (c != setters.length)
-            throw new RuntimeException("arguments " + Arrays.toString(fields) + " length not match to rlp list size");
+            throw new RlpDecodeException("arguments " + Arrays.toString(fields) + " length not match to rlp list size");
 
         T dst;
         try {
             dst = constructor.newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("unexpected error when create instance by constructor " + constructor);
+            throw new RlpDecodeException("unexpected error when create instance by constructor " + constructor);
         }
         for (int i = 0; i < setters.length; i++) {
             Method setter = setters[i];
@@ -49,13 +50,13 @@ public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
                 try {
                     setter.invoke(dst, RlpStream.decode(bin, children[i], setterTypes[i]));
                 } catch (Exception e) {
-                    throw new RuntimeException("unexpected error when invoke setter " + setter);
+                    throw new RlpDecodeException("unexpected error when invoke setter " + setter);
                 }
             } else {
                 try {
                     fields[i].set(dst, RlpStream.decode(bin, children[i], fields[i].getType()));
                 } catch (Exception e) {
-                    throw new RuntimeException("unexpected error when set field " + fields[i]);
+                    throw new RlpDecodeException("unexpected error when set field " + fields[i]);
                 }
             }
         }

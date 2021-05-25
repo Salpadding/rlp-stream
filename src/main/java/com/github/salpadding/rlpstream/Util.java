@@ -10,7 +10,7 @@ public class Util {
      * @return a byte array without a leading zero byte if present in the signed encoding.
      */
     public static byte[] asUnsignedByteArray(
-            BigInteger value) {
+        BigInteger value) {
         byte[] bytes = value.toByteArray();
 
         if (bytes[0] == 0) {

@@ -6,7 +6,7 @@ import lombok.SneakyThrows;
 import java.lang.reflect.Method;
 
 @RequiredArgsConstructor
-class StaticMethodWriter implements ObjectWriter{
+class StaticMethodWriter implements ObjectWriter {
     private final Method method;
 
     @Override

@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
+
 import java.math.BigInteger;
 import java.util.Collection;
 
@@ -21,7 +23,7 @@ public class RlpList {
 
     private long getChildren(int index) {
         if (index >= childrenCnt)
-            throw new RuntimeException("array index overflow");
+            throw new RlpDecodeException("array index overflow");
         return children[index];
     }
 
@@ -30,7 +32,7 @@ public class RlpList {
         this.streamId = streamId;
         this.bin = bin;
         if (!StreamId.isList(streamId))
-            throw new RuntimeException("not a rlp list");
+            throw new RlpDecodeException("not a rlp list");
         this.children = new long[Math.max(bufSize, 1)];
 
         long now = this.streamId;
@@ -43,11 +45,11 @@ public class RlpList {
         }
     }
 
-   RlpList(byte[] encoded, int rawOffset, int rawLimit, int bufSize) {
+    RlpList(byte[] encoded, int rawOffset, int rawLimit, int bufSize) {
         this(
-                encoded,
-                RlpStream.decodeElement(encoded, rawOffset, rawLimit, true),
-                bufSize
+            encoded,
+            RlpStream.decodeElement(encoded, rawOffset, rawLimit, true),
+            bufSize
         );
     }
 
@@ -59,7 +61,7 @@ public class RlpList {
 
     public static RlpList fromElements(Collection<byte[]> elements) {
         return fromEncoded(
-                Rlp.encodeElements(elements)
+            Rlp.encodeElements(elements)
         );
     }
 

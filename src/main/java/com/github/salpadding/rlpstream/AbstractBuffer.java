@@ -15,7 +15,7 @@ abstract class AbstractBuffer implements RlpBuffer, Closeable {
 
     // pre allocate list prefix
     void allocateListPrefix() {
-        for(int i = 0; i < MAX_PREFIX_SIZE; i++)
+        for (int i = 0; i < MAX_PREFIX_SIZE; i++)
             write((byte) 0);
     }
 
@@ -35,20 +35,20 @@ abstract class AbstractBuffer implements RlpBuffer, Closeable {
     }
 
     void leftShift(int offset, int size, int shifts) {
-        if(shifts == 0)
+        if (shifts == 0)
             return;
-        if(offset < 0)
-            throw new RuntimeException("offset should be positive");
-        if(offset >= getSize())
-            throw new RuntimeException("memory access overflow");
-        if(size < 0)
-            throw new RuntimeException("size should be positive");
-        if(size > getSize() - offset)
-            throw new RuntimeException("size too large");
-        if(shifts < 0)
-            throw new RuntimeException("shift should be non-negative");
-        if(shifts > offset)
-            throw new RuntimeException("shifts too large");
+        if (offset < 0)
+            throw new UnsupportedOperationException("offset should be positive");
+        if (offset >= getSize())
+            throw new UnsupportedOperationException("memory access overflow");
+        if (size < 0)
+            throw new UnsupportedOperationException("size should be positive");
+        if (size > getSize() - offset)
+            throw new UnsupportedOperationException("size too large");
+        if (shifts < 0)
+            throw new UnsupportedOperationException("shift should be non-negative");
+        if (shifts > offset)
+            throw new UnsupportedOperationException("shifts too large");
         primitiveLeftShift(offset, size, shifts);
     }
 

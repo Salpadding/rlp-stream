@@ -2,6 +2,7 @@ package com.github.salpadding.rlpstream;
 
 import com.github.salpadding.rlpstream.annotation.RlpCreator;
 import com.github.salpadding.rlpstream.annotation.RlpProps;
+import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
 import lombok.SneakyThrows;
 
 import java.lang.reflect.*;
@@ -70,7 +71,7 @@ class RlpStream {
                 return null;
 
             if (!isList)
-                throw new RuntimeException("rlp list expected when decode as " + clazz.getComponentType() + "[]");
+                throw new RlpDecodeException("rlp list expected when decode as " + clazz.getComponentType() + "[]");
             List<Long> children = new ArrayList<>();
 
             long j = streamId;
@@ -88,7 +89,7 @@ class RlpStream {
                 try {
                     Array.set(res, i, o);
                 } catch (Exception e) {
-                    throw new RuntimeException("set array entry failed type " + elementType + " expected while " + o + " received");
+                    throw new RlpDecodeException("set array entry failed type " + elementType + " expected while " + o + " received");
                 }
             }
             return (T) res;
@@ -110,16 +111,16 @@ class RlpStream {
             Method m = methods[i];
             if (m.isAnnotationPresent(RlpCreator.class)) {
                 if (!Modifier.isStatic(m.getModifiers())) {
-                    throw new RuntimeException("RlpCreator of class " + clazz + " method " + m + " should be static");
+                    throw new RlpDecodeException("RlpCreator of class " + clazz + " method " + m + " should be static");
                 }
                 if (
-                        m.getParameterCount() != 2 ||
-                                !(m.getParameterTypes()[0]).isAssignableFrom(byte[].class) ||
-                                (!(m.getParameterTypes()[1]).isAssignableFrom(long.class) && !(m.getParameterTypes()[1]).isAssignableFrom(Long.class)) ||
-                                !clazz.isAssignableFrom(m.getReturnType())
+                    m.getParameterCount() != 2 ||
+                        !(m.getParameterTypes()[0]).isAssignableFrom(byte[].class) ||
+                        (!(m.getParameterTypes()[1]).isAssignableFrom(long.class) && !(m.getParameterTypes()[1]).isAssignableFrom(Long.class)) ||
+                        !clazz.isAssignableFrom(m.getReturnType())
                 )
-                    throw new RuntimeException(
-                            String.format("static method RlpCreator of class %s method should be %s %s(byte[] bin, long streamId)", clazz.getName(), clazz.getName(), m.getName())
+                    throw new RlpDecodeException(
+                        String.format("static method RlpCreator of class %s method should be %s %s(byte[] bin, long streamId)", clazz.getName(), clazz.getName(), m.getName())
                     );
                 StaticMethodDecoder<T> de = new StaticMethodDecoder<>(m);
                 addDecoder(clazz, de);
@@ -136,7 +137,7 @@ class RlpStream {
             }
             if (con.isAnnotationPresent(RlpCreator.class)) {
                 if (!isList)
-                    throw new RuntimeException("rlp list expected when decode as class " + clazz);
+                    throw new RlpDecodeException("rlp list expected when decode as class " + clazz);
                 if (creator == null || creator.getParameterCount() < con.getParameterCount()) {
                     creator = con;
                 }
@@ -153,10 +154,10 @@ class RlpStream {
             if (StreamId.isNull(streamId))
                 return null;
             if (!isList)
-                throw new RuntimeException("rlp list expected when decode as class " + clazz);
+                throw new RlpDecodeException("rlp list expected when decode as class " + clazz);
 
             if (noArg == null)
-                throw new RuntimeException("expect a no args constructor for class " + clazz);
+                throw new RlpDecodeException("expect a no args constructor for class " + clazz);
 
             String[] fieldNames = clazz.getAnnotation(RlpProps.class).value();
             Method[] setters = new Method[fieldNames.length];
@@ -172,9 +173,9 @@ class RlpStream {
                 // try to set field by setter
                 try {
                     Optional<Method> setter =
-                            Arrays.stream(allMethods)
-                                    .filter(m -> m.getName().equals(setterName) && m.getParameterCount() == 1)
-                                    .findFirst();
+                        Arrays.stream(allMethods)
+                            .filter(m -> m.getName().equals(setterName) && m.getParameterCount() == 1)
+                            .findFirst();
 
                     if (setter.isPresent()) {
                         setters[i] = setter.get();
@@ -193,7 +194,7 @@ class RlpStream {
             addDecoder(clazz, de);
             return de.apply(bin, streamId);
         }
-        throw new RuntimeException("decode failed");
+        throw new RlpDecodeException("decode failed");
     }
 
     /**
@@ -227,15 +228,17 @@ class RlpStream {
     }
 
     static long decodeElement(byte[] bin, int rawOffset, int rawLimit, boolean full) {
+        if (rawLimit <= rawOffset)
+            throw new RlpDecodeException("empty encoding");
         int prefix = bin[rawOffset] & 0xff;
 
         if (prefix < Constants.OFFSET_SHORT_ITEM) {
             // prefix size = 0, length = 1
             // assert size
             if (rawOffset + 1 > rawLimit)
-                throw new RuntimeException("invalid rlp");
+                throw new RlpDecodeException("invalid rlp");
             if (full && rawOffset + 1 != rawLimit)
-                throw new RuntimeException("invalid rlp, unexpected tails");
+                throw new RlpDecodeException("invalid rlp, unexpected tails");
             // prefix size = 0, actual size = 1, offset = rawOffset
             return (1L << 32) | (Integer.toUnsignedLong(rawOffset)) | MONO_MASK;
         }
@@ -244,66 +247,50 @@ class RlpStream {
             // prefix size = 1, length
             int length = prefix - Constants.OFFSET_SHORT_ITEM;
             if (rawOffset + 1 + length > rawLimit)
-                throw new RuntimeException("invalid rlp");
+                throw new RlpDecodeException("invalid rlp");
             if (full && rawOffset + 1 + length != rawLimit)
-                throw new RuntimeException("invalid rlp, unexpected tails");
+                throw new RlpDecodeException("invalid rlp, unexpected tails");
             // prefix size = 1, actual size = length, LIST_SIGN = false
             if (length == 1 && (bin[rawOffset + 1] & 0xff) < Constants.OFFSET_SHORT_ITEM)
-                throw new RuntimeException("invalid rlp, not a canonical short item");
+                throw new RlpDecodeException("invalid rlp, not a canonical short item");
             return (Integer.toUnsignedLong(length) << 32) | (Integer.toUnsignedLong(rawOffset + 1));
         }
 
         if (prefix < Constants.OFFSET_SHORT_LIST) {
             int lengthBits = prefix - Constants.OFFSET_LONG_ITEM; // length of length the encoded bytes
-            int len = 0;
-
-            // MSB of length = bin[offset + 1],
-            // LSB of length = bin[offset + 1 + lengthBits - 1] = bin[offset + lengthBits]
-            // i = 0 is LSB, i = lengthBits - 1 is MSB
-            for (int i = 0; i < lengthBits; i++) {
-                int b = bin[rawOffset + lengthBits - i] & 0xff;
-                len |= b << (i * 8);
-            }
-
-            if (rawOffset + 1 + lengthBits + len > rawLimit)
-                throw new RuntimeException("invalid rlp");
-            if (full && rawOffset + 1 + lengthBits + len != rawLimit)
-                throw new RuntimeException("invalid rlp, unexpected tails");
-            // prefix size = 1 + lengthBits, actual size = len, LIST_SIGN =  false
+            int len = (int) StreamId.asLong(bin, rawOffset + 1, lengthBits);
+            if (len < 0)
+                throw new RlpDecodeException("rlp size overflow");
 
             if (len < Constants.SIZE_THRESHOLD)
-                throw new RuntimeException("not a canonical long rlp item, length <= 55");
+                throw new RlpDecodeException("not a canonical long rlp item, length <= 55");
+            if (rawOffset + 1 + lengthBits + len > rawLimit)
+                throw new RlpDecodeException("invalid rlp");
             return
-                    (Integer.toUnsignedLong(len) << 32) | Integer.toUnsignedLong(1 + lengthBits + rawOffset);
+                (Integer.toUnsignedLong(len) << 32) | Integer.toUnsignedLong(1 + lengthBits + rawOffset);
         }
 
         if (prefix <= Constants.OFFSET_LONG_LIST) {
             int len = prefix - Constants.OFFSET_SHORT_LIST; // length of length the encoded bytes
             // skip preifx
             if (rawOffset + 1 + len > rawLimit)
-                throw new RuntimeException("invalid rlp");
+                throw new RlpDecodeException("invalid rlp");
             if (full && rawOffset + 1 + len != rawLimit)
-                throw new RuntimeException("invalid rlp, unexpected tails");
+                throw new RlpDecodeException("invalid rlp, unexpected tails");
             // prefix size = 1, acutal size = len, LIST_SIGN = true
             return (Integer.toUnsignedLong(len) << 32) | Constants.LIST_SIGN_MASK | Integer.toUnsignedLong(rawOffset + 1);
         }
         int lengthBits = prefix - Constants.OFFSET_LONG_LIST; // length of length the encoded list
-        int len = 0;
-        // MSB of length = bin[offset + 1],
-        // LSB of length = bin[offset + 1 + lengthBits - 1] = bin[offset + lengthBits]
-        // i = 0 is LSB, i = lengthBits - 1 is MSB
-        for (int i = 0; i < lengthBits; i++) {
-            int b = bin[rawOffset + lengthBits - i] & 0xff;
-            len |= b << (i * 8);
-        }
-
+        int len = (int) StreamId.asLong(bin, rawOffset + 1, lengthBits);
+        if (len < 0)
+            throw new RlpDecodeException("rlp size overflow");
         if (len < Constants.SIZE_THRESHOLD)
-            throw new RuntimeException("not a canonical long rlp list, length <= 55");
+            throw new RlpDecodeException("not a canonical long rlp list, length <= 55");
 
         if (rawOffset + 1 + lengthBits + len > rawLimit)
-            throw new RuntimeException("invalid rlp");
+            throw new RlpDecodeException("invalid rlp");
         if (full && rawOffset + 1 + lengthBits + len != rawLimit)
-            throw new RuntimeException("invalid rlp, unexpected tails");
+            throw new RlpDecodeException("invalid rlp, unexpected tails");
         // prefix size = 1 + lengthBits, acutal size = len, LIST_SIGN = true
         return (Integer.toUnsignedLong(len) << 32) | Constants.LIST_SIGN_MASK | Integer.toUnsignedLong(rawOffset + 1 + lengthBits);
     }

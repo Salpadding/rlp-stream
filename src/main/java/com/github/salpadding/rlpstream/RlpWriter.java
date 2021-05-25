@@ -1,6 +1,7 @@
 package com.github.salpadding.rlpstream;
 
 import com.github.salpadding.rlpstream.annotation.RlpProps;
+import com.github.salpadding.rlpstream.exceptions.RlpEncodeException;
 import lombok.SneakyThrows;
 
 import java.io.DataOutput;
@@ -91,7 +92,7 @@ class RlpWriter {
         if (bn == null || bn.equals(BigInteger.ZERO))
             return writeNull(buf);
         if (bn.signum() < 0)
-            throw new RuntimeException("unexpected negative big integer");
+            throw new RlpEncodeException("unexpected negative big integer");
         if (bn.equals(BigInteger.ONE))
             return writeOne(buf);
         byte[] bytes = bn.toByteArray();
@@ -194,16 +195,16 @@ class RlpWriter {
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(com.github.salpadding.rlpstream.annotation.RlpWriter.class)) {
                 if (!Modifier.isStatic(method.getModifiers())) {
-                    throw new RuntimeException("RlpWriter of class " + clazz + " method " + method + " should be static");
+                    throw new RlpEncodeException("RlpWriter of class " + clazz + " method " + method + " should be static");
                 }
                 if (
-                        method.getParameterCount() != 2 ||
-                                !(method.getParameterTypes()[0]).isAssignableFrom(clazz) ||
-                                !(method.getParameterTypes()[1]).isAssignableFrom(RlpBuffer.class) ||
-                                (!int.class.isAssignableFrom(method.getReturnType()) && !Integer.class.isAssignableFrom(method.getReturnType()))
+                    method.getParameterCount() != 2 ||
+                        !(method.getParameterTypes()[0]).isAssignableFrom(clazz) ||
+                        !(method.getParameterTypes()[1]).isAssignableFrom(RlpBuffer.class) ||
+                        (!int.class.isAssignableFrom(method.getReturnType()) && !Integer.class.isAssignableFrom(method.getReturnType()))
                 )
-                    throw new RuntimeException(
-                            String.format("RlpWriter of class %s method should be int %s(%s obj, %s buf)", clazz.getName(), method.getName(), clazz.getName(), "RlpBuffer")
+                    throw new RlpEncodeException(
+                        String.format("RlpWriter of class %s method should be int %s(%s obj, %s buf)", clazz.getName(), method.getName(), clazz.getName(), "RlpBuffer")
                     );
                 w = new StaticMethodWriter(method);
                 Map<Class<?>, ObjectWriter> ws = new HashMap<>(OBJECT_WRITERS);
@@ -214,7 +215,7 @@ class RlpWriter {
         }
 
         if (!clazz.isAnnotationPresent(RlpProps.class))
-            throw new RuntimeException(clazz + " is not annotated with RlpProps");
+            throw new RlpEncodeException(clazz + " is not annotated with RlpProps");
         String[] fieldNames = clazz.getAnnotation(RlpProps.class).value();
         Method[] getters = new Method[fieldNames.length];
         Field[] fields = new Field[fieldNames.length];

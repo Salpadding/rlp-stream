@@ -18,7 +18,8 @@ public class BytesBuf extends AbstractBuffer {
 
     private byte[] bin;
 
-    @Getter@Setter
+    @Getter
+    @Setter
     private int size;
 
     private void tryExtend() {

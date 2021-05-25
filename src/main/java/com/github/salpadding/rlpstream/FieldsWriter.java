@@ -6,10 +6,10 @@ import lombok.SneakyThrows;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import static com.github.salpadding.rlpstream.RlpWriter.*;
+import static com.github.salpadding.rlpstream.RlpWriter.writeObject;
 
 @RequiredArgsConstructor
-class FieldsWriter implements ObjectWriter{
+class FieldsWriter implements ObjectWriter {
     private final Method[] getters;
     private final Field[] fields;
 

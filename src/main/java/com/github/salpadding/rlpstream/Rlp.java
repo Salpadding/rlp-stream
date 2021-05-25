@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
+
 import java.io.DataOutput;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +60,7 @@ public class Rlp {
     }
 
     public static byte[] encodeElements(Collection<? extends byte[]> elements) {
-        if(elements.size() == 0)
+        if (elements.size() == 0)
             return EMPTY_LIST;
         byte[][] array = new byte[elements.size()][];
         int i = 0;
@@ -78,7 +80,7 @@ public class Rlp {
     }
 
     public static byte[] encodeElements(byte[]... elements) {
-        if(elements.length == 0)
+        if (elements.length == 0)
             return EMPTY_LIST;
 
         int totalLength = 0;
@@ -123,9 +125,9 @@ public class Rlp {
     }
 
     public static byte[] encodeLong(long l) {
-        if(l == 0)
+        if (l == 0)
             return NULL;
-        if(l == 1)
+        if (l == 1)
             return ONE;
         int leadingZeroBytes = Long.numberOfLeadingZeros(l) / Byte.SIZE;
         byte[] data = new byte[8 - leadingZeroBytes];
@@ -165,42 +167,42 @@ public class Rlp {
     public static int decodeInt(byte[] raw) {
         long l = decodeLong(raw);
         if (Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
-            throw new RuntimeException("decode as int failed, numeric overflow");
+            throw new RlpDecodeException("decode as int failed, numeric overflow");
         return (int) l;
     }
 
     public static int decodeInt(byte[] raw, int offset) {
         long l = decodeLong(raw, offset);
         if (Long.compareUnsigned(l, 0xFFFFFFFFL) > 0)
-            throw new RuntimeException("decode as int failed, numeric overflow");
+            throw new RlpDecodeException("decode as int failed, numeric overflow");
         return (int) l;
     }
 
     public static short decodeShort(byte[] raw) {
         long l = decodeLong(raw);
         if (Long.compareUnsigned(l, 0xFFFFL) > 0)
-            throw new RuntimeException("decode as short failed, numeric overflow");
+            throw new RlpDecodeException("decode as short failed, numeric overflow");
         return (short) l;
     }
 
     public static short decodeShort(byte[] raw, int offset) {
         long l = decodeLong(raw, offset);
         if (Long.compareUnsigned(l, 0xFFFFL) > 0)
-            throw new RuntimeException("decode as short failed, numeric overflow");
+            throw new RlpDecodeException("decode as short failed, numeric overflow");
         return (short) l;
     }
 
     public static byte decodeByte(byte[] raw) {
         long l = decodeLong(raw);
         if (Long.compareUnsigned(l, 0xFFL) > 0)
-            throw new RuntimeException("decode as byte failed, numeric overflow");
+            throw new RlpDecodeException("decode as byte failed, numeric overflow");
         return (byte) l;
     }
 
     public static byte decodeByte(byte[] raw, int offset) {
         long l = decodeLong(raw, offset);
         if (Long.compareUnsigned(l, 0xFFL) > 0)
-            throw new RuntimeException("decode as byte failed, numeric overflow");
+            throw new RlpDecodeException("decode as byte failed, numeric overflow");
         return (byte) l;
     }
 
@@ -219,7 +221,7 @@ public class Rlp {
     public static byte[] encodeBigInteger(BigInteger i) {
         if (i == null || i.equals(BigInteger.ZERO))
             return NULL;
-        if(i.equals(BigInteger.ONE))
+        if (i.equals(BigInteger.ONE))
             return ONE;
         return encodeBytes(Util.asUnsignedByteArray(i));
     }

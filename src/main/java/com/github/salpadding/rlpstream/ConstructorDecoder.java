@@ -1,5 +1,6 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
 import lombok.SneakyThrows;
 
 import java.lang.reflect.Constructor;
@@ -18,7 +19,7 @@ public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
     @Override
     @SneakyThrows
     public T apply(byte[] bin, Long streamId) {
-        if(StreamId.isNull(streamId))
+        if (StreamId.isNull(streamId))
             return null;
         Object[] args = new Object[constructor.getParameterCount()];
         long[] children = new long[args.length];
@@ -30,11 +31,11 @@ public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
             if (StreamId.isEOF(j))
                 break;
             if (c >= children.length)
-                throw new RuntimeException("constructor arguments length not match to rlp list size");
+                throw new RlpDecodeException("constructor arguments length not match to rlp list size");
             children[c++] = j;
         }
         if (c != args.length)
-            throw new RuntimeException("constructor arguments length not match to rlp list size");
+            throw new RlpDecodeException("constructor arguments length not match to rlp list size");
 
         for (int i = 0; i < args.length; i++) {
             args[i] = RlpStream.decode(bin, children[i], parameterTypes[i]);

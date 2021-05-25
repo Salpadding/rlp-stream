@@ -16,7 +16,7 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
             field.setAccessible(true);
             return (Unsafe) field.get(null);
         } catch (Exception e) {
-            throw new RuntimeException("access unsafe failed");
+            throw new UnsupportedOperationException("access unsafe failed");
         }
     }
 
@@ -26,7 +26,8 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
     private long pointer;
     private int cap;
 
-    @Getter@Setter
+    @Getter
+    @Setter
     private int size;
 
     public UnsafeBuf(int cap) {
@@ -40,7 +41,7 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
             int newCap = cap * 2;
             if (newCap < 0) {
                 close();
-                throw new RuntimeException("memory overflow");
+                throw new UnsupportedOperationException("memory overflow");
             }
             long newPointer = unsafe.reallocateMemory(pointer, newCap);
             unsafe.setMemory(newPointer + cap, newCap - cap, (byte) 0);
