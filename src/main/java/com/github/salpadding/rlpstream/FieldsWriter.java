@@ -16,8 +16,7 @@ class FieldsWriter implements ObjectWriter{
     @SneakyThrows
     public int writeToBuf(AbstractBuffer buf, Object o) {
         int size = 0;
-        int cur = buf.getSize();
-        buf.setSize(cur + MAX_PREFIX_SIZE);
+        buf.allocateListPrefix();
 
         for (int i = 0; i < fields.length; i++) {
             Method getter = getters[i];
@@ -29,10 +28,6 @@ class FieldsWriter implements ObjectWriter{
             }
             size += writeObject(buf, oi);
         }
-        buf.setSize(cur);
-        int prefix = writePrefix(buf, size, false, true);
-        buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
-        buf.setSize(cur + prefix + size);
-        return size + prefix;
+        return size + buf.writeListPrefix(size);
     }
 }

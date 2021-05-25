@@ -111,17 +111,13 @@ class RlpWriter {
     public static int writeElements(AbstractBuffer buf, byte[]... elements) {
         if (elements.length == 0)
             return writeEmptyList(buf);
-        int cur = buf.getSize();
-        buf.setSize(cur + MAX_PREFIX_SIZE);
+
+        buf.allocateListPrefix();
         int size = 0;
         for (int i = 0; i < elements.length; i++) {
             size += writeRaw(buf, elements[i]);
         }
-        buf.setSize(cur);
-        int prefix = writePrefix(buf, size, false, true);
-        buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
-        buf.setSize(cur + prefix + size);
-        return size + prefix;
+        return size + buf.writeListPrefix(size);
     }
 
     @SneakyThrows
@@ -166,34 +162,25 @@ class RlpWriter {
             if (Array.getLength(o) == 0)
                 return writeEmptyList(buf);
             // write empty prefix
-            int cur = buf.getSize();
-            buf.setSize(cur + MAX_PREFIX_SIZE);
+
+            buf.allocateListPrefix();
             int size = 0;
             for (int i = 0; i < Array.getLength(o); i++) {
                 Object oi = Array.get(o, i);
                 size += writeObject(buf, oi);
             }
-            buf.setSize(cur);
-            int prefix = writePrefix(buf, size, false, true);
-            buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
-            buf.setSize(cur + prefix + size);
-            return size + prefix;
+            return size + buf.writeListPrefix(size);
         }
         if (o instanceof Collection) {
             Collection<?> col = (Collection<?>) o;
             if (col.size() == 0)
                 return writeEmptyList(buf);
-            int cur = buf.getSize();
-            buf.setSize(cur + MAX_PREFIX_SIZE);
+            buf.allocateListPrefix();
             int size = 0;
             for (Object c : col) {
                 size += writeObject(buf, c);
             }
-            buf.setSize(cur);
-            int prefix = writePrefix(buf, size, false, true);
-            buf.shift(cur + MAX_PREFIX_SIZE, size, prefix - MAX_PREFIX_SIZE);
-            buf.setSize(cur + prefix + size);
-            return size + prefix;
+            return size + buf.writeListPrefix(size);
         }
         ObjectWriter w = getWriter(o.getClass());
         return w.writeToBuf(buf, o);

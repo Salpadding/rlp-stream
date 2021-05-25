@@ -1,6 +1,8 @@
 package com.github.salpadding.rlpstream;
 
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 
 import java.io.DataOutput;
@@ -16,21 +18,11 @@ public class BytesBuf extends AbstractBuffer {
 
     private byte[] bin;
 
-    @Override
-    public int getSize() {
-        return size;
-    }
-
-    @Override
-    public void setSize(int size) {
-        this.size = size;
-        tryExtend();
-    }
-
+    @Getter@Setter
     private int size;
 
     private void tryExtend() {
-        while (size >= bin.length) {
+        if (size >= bin.length) {
             byte[] tmp = new byte[size * 2];
             System.arraycopy(bin, 0, tmp, 0, bin.length);
             this.bin = tmp;
@@ -44,9 +36,8 @@ public class BytesBuf extends AbstractBuffer {
     }
 
 
-    @Override
-    public void shift(int offset, int size, int shifts) {
-        System.arraycopy(bin, offset, bin, offset + shifts, size);
+    public void primitiveLeftShift(int offset, int size, int shifts) {
+        System.arraycopy(bin, offset, bin, offset - shifts, size);
     }
 
     @Override

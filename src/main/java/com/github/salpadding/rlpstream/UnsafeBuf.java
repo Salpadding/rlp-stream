@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import sun.misc.Unsafe;
 
@@ -23,6 +25,8 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
 
     private long pointer;
     private int cap;
+
+    @Getter@Setter
     private int size;
 
     public UnsafeBuf(int cap) {
@@ -32,7 +36,7 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
     }
 
     private void tryExtend() {
-        while (size >= cap) {
+        if (size >= cap) {
             int newCap = cap * 2;
             if (newCap < 0) {
                 close();
@@ -52,20 +56,10 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
         this.size++;
     }
 
-    @Override
-    void shift(int offset, int size, int shifts) {
-        unsafe.copyMemory(this.pointer + offset, this.pointer + offset + shifts, size);
-    }
-
-    @Override
-    int getSize() {
-        return size;
-    }
-
-    @Override
-    void setSize(int size) {
-        this.size = size;
-        tryExtend();
+    void primitiveLeftShift(int offset, int size, int shifts) {
+        long srcAddr = this.pointer + offset;
+        long dstAddr = this.pointer + offset - shifts;
+        unsafe.copyMemory(srcAddr, dstAddr, size);
     }
 
     @Override

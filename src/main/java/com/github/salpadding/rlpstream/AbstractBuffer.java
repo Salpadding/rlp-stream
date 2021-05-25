@@ -7,16 +7,52 @@ import java.io.DataOutput;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
+import static com.github.salpadding.rlpstream.RlpWriter.MAX_PREFIX_SIZE;
+import static com.github.salpadding.rlpstream.RlpWriter.writePrefix;
+
 abstract class AbstractBuffer implements RlpBuffer, Closeable {
     abstract void write(byte b);
 
-    // shifts > 0 -> right shift
-    // shifts < 0 -> left shift
-    abstract void shift(int offset, int size, int shifts);
+    // pre allocate list prefix
+    void allocateListPrefix() {
+        for(int i = 0; i < MAX_PREFIX_SIZE; i++)
+            write((byte) 0);
+    }
 
     abstract int getSize();
 
     abstract void setSize(int size);
+
+    int writeListPrefix(int size) {
+        int prevSize = this.getSize();
+        setSize(prevSize - size - MAX_PREFIX_SIZE);
+        int prefixSize = writePrefix(this, size, false, true);
+        int shifts = MAX_PREFIX_SIZE - prefixSize;
+        setSize(prevSize);
+        leftShift(prevSize - size, size, shifts);
+        setSize(prevSize - shifts);
+        return prefixSize;
+    }
+
+    void leftShift(int offset, int size, int shifts) {
+        if(shifts == 0)
+            return;
+        if(offset < 0)
+            throw new RuntimeException("offset should be positive");
+        if(offset >= getSize())
+            throw new RuntimeException("memory access overflow");
+        if(size < 0)
+            throw new RuntimeException("size should be positive");
+        if(size > getSize() - offset)
+            throw new RuntimeException("size too large");
+        if(shifts < 0)
+            throw new RuntimeException("shift should be non-negative");
+        if(shifts > offset)
+            throw new RuntimeException("shifts too large");
+        primitiveLeftShift(offset, size, shifts);
+    }
+
+    abstract void primitiveLeftShift(int offset, int size, int shifts);
 
     abstract byte[] toByteArray();
 
