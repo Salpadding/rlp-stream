@@ -1,9 +1,10 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -16,6 +17,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 
+import static com.github.salpadding.rlpstream.Constants.EMPTY_LIST;
 import static com.github.salpadding.rlpstream.Rlp.*;
 import static org.junit.Assert.*;
 
@@ -816,5 +818,75 @@ public class RlpTest {
         expected[0] = (byte) 0xb8;
         expected[1] = (byte) 56;
         assertArrayEquals(expected, Rlp.encode(str));
+    }
+
+    static class InvalidClass {
+        @RlpCreator
+        public static InvalidClass fromRlpStream(byte[] bin, int streamId) {
+            return null;
+        }
+
+        @com.github.salpadding.rlpstream.annotation.RlpWriter
+        public static long writeToBuf(InvalidClass i, RlpBuffer buf) {
+            return buf.writeNull();
+        }
+    }
+
+    static class ValidClass {
+        @RlpCreator
+        public static ValidClass fromRlpStream(byte[] bin, long streamId) {
+            return null;
+        }
+
+
+        @com.github.salpadding.rlpstream.annotation.RlpWriter
+        public static int writeToBuf(ValidClass v, RlpBuffer buf) {
+            return buf.writeNull();
+        }
+    }
+
+    interface ValidInterface {
+        @RlpCreator
+        static ValidInterfaceImpl fromRlpStream(byte[] bin, long streamId) {
+            return new ValidInterfaceImpl();
+        }
+    }
+
+    static class ValidInterfaceImpl implements ValidInterface {
+        @com.github.salpadding.rlpstream.annotation.RlpWriter
+        public static int writeToBuf(ValidInterface i, RlpBuffer buf) {
+            return buf.writeNull();
+        }
+    }
+
+
+    @Test(expected = RuntimeException.class)
+    public void testInvalidRlpCreator() {
+        Rlp.decode(EMPTY_LIST, InvalidClass.class);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testInvalidRlpWriter() {
+        Rlp.encode(new InvalidClass());
+    }
+
+    @Test
+    public void testValidRlpCreator() {
+        Rlp.decode(EMPTY_LIST, ValidClass.class);
+    }
+
+    @Test
+    public void testValidRlpWriter() {
+        Rlp.encode(new ValidClass());
+    }
+
+    @Test
+    public void testValidRlpCreator0() {
+        Rlp.decode(EMPTY_LIST, ValidInterface.class);
+    }
+
+    @Test
+    public void testValidRlpWriter1() {
+        Rlp.encode(new ValidInterfaceImpl());
     }
 }

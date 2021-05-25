@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import lombok.SneakyThrows;
 
 import java.lang.reflect.*;
@@ -110,6 +112,15 @@ class RlpStream {
                 if (!Modifier.isStatic(m.getModifiers())) {
                     throw new RuntimeException("RlpCreator of class " + clazz + " method " + m + " should be static");
                 }
+                if (
+                        m.getParameterCount() != 2 ||
+                                !(m.getParameterTypes()[0]).isAssignableFrom(byte[].class) ||
+                                (!(m.getParameterTypes()[1]).isAssignableFrom(long.class) && !(m.getParameterTypes()[1]).isAssignableFrom(Long.class)) ||
+                                !clazz.isAssignableFrom(m.getReturnType())
+                )
+                    throw new RuntimeException(
+                            String.format("static method RlpCreator of class %s method should be %s %s(byte[] bin, long streamId)", clazz.getName(), clazz.getName(), m.getName())
+                    );
                 StaticMethodDecoder<T> de = new StaticMethodDecoder<>(m);
                 addDecoder(clazz, de);
                 return de.apply(bin, streamId);
@@ -126,13 +137,13 @@ class RlpStream {
             if (con.isAnnotationPresent(RlpCreator.class)) {
                 if (!isList)
                     throw new RuntimeException("rlp list expected when decode as class " + clazz);
-                if(creator == null || creator.getParameterCount() < con.getParameterCount()) {
+                if (creator == null || creator.getParameterCount() < con.getParameterCount()) {
                     creator = con;
                 }
             }
         }
 
-        if(creator != null) {
+        if (creator != null) {
             ConstructorDecoder<T> de = new ConstructorDecoder<>(creator);
             addDecoder(clazz, de);
             return de.apply(bin, streamId);

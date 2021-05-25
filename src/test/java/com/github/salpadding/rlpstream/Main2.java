@@ -1,5 +1,7 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.annotation.RlpCreator;
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import lombok.Data;
 import org.spongycastle.util.encoders.Hex;
 

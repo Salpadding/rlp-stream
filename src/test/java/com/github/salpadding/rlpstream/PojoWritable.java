@@ -1,5 +1,6 @@
 package com.github.salpadding.rlpstream;
 
+import com.github.salpadding.rlpstream.annotation.RlpProps;
 import org.apache.commons.codec.binary.Hex;
 
 import java.util.Arrays;
