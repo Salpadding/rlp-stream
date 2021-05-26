@@ -7,8 +7,8 @@ import lombok.SneakyThrows;
 
 import java.io.DataOutput;
 
-public class BytesBuf extends AbstractBuffer {
-    public static AbstractBuffer alloc(int size) {
+final class BytesBuf extends AbstractBuffer {
+    static AbstractBuffer alloc(int size) {
         return new BytesBuf(new byte[size]);
     }
 

@@ -17,10 +17,13 @@ import static com.github.salpadding.rlpstream.Constants.MONO_MASK;
 // represent rlp element by
 // streamid = LIST SIGN | raw size | raw offset
 // list sign bit | prefix size(0x00 ~ 0x7f) << 56 | size << 32 | offset, MSG of rlp list will be 1
-class RlpStream {
+final class RlpStream {
+    private RlpStream() {
+    }
+
     static Map<Class<?>, BiFunction<byte[], Long, ?>> DECODER = new HashMap<>();
 
-    public static <T> void addDecoder(Class<T> clazz, BiFunction<byte[], Long, T> decoder) {
+    static <T> void addDecoder(Class<T> clazz, BiFunction<byte[], Long, T> decoder) {
         Map<Class<?>, BiFunction<byte[], Long, ?>> m = new HashMap<>(DECODER);
         m.put(clazz, decoder);
         DECODER = m;
@@ -114,13 +117,13 @@ class RlpStream {
                     throw new RlpDecodeException("RlpCreator of class " + clazz + " method " + m + " should be static");
                 }
                 if (
-                    m.getParameterCount() != 2 ||
-                        !(m.getParameterTypes()[0]).isAssignableFrom(byte[].class) ||
-                        (!(m.getParameterTypes()[1]).isAssignableFrom(long.class) && !(m.getParameterTypes()[1]).isAssignableFrom(Long.class)) ||
-                        !clazz.isAssignableFrom(m.getReturnType())
+                        m.getParameterCount() != 2 ||
+                                !(m.getParameterTypes()[0]).isAssignableFrom(byte[].class) ||
+                                (!(m.getParameterTypes()[1]).isAssignableFrom(long.class) && !(m.getParameterTypes()[1]).isAssignableFrom(Long.class)) ||
+                                !clazz.isAssignableFrom(m.getReturnType())
                 )
                     throw new RlpDecodeException(
-                        String.format("static method RlpCreator of class %s method should be %s %s(byte[] bin, long streamId)", clazz.getName(), clazz.getName(), m.getName())
+                            String.format("static method RlpCreator of class %s method should be %s %s(byte[] bin, long streamId)", clazz.getName(), clazz.getName(), m.getName())
                     );
                 StaticMethodDecoder<T> de = new StaticMethodDecoder<>(m);
                 addDecoder(clazz, de);
@@ -173,9 +176,9 @@ class RlpStream {
                 // try to set field by setter
                 try {
                     Optional<Method> setter =
-                        Arrays.stream(allMethods)
-                            .filter(m -> m.getName().equals(setterName) && m.getParameterCount() == 1)
-                            .findFirst();
+                            Arrays.stream(allMethods)
+                                    .filter(m -> m.getName().equals(setterName) && m.getParameterCount() == 1)
+                                    .findFirst();
 
                     if (setter.isPresent()) {
                         setters[i] = setter.get();
@@ -267,7 +270,7 @@ class RlpStream {
             if (rawOffset + 1 + lengthBits + len > rawLimit)
                 throw new RlpDecodeException("invalid rlp");
             return
-                (Integer.toUnsignedLong(len) << 32) | Integer.toUnsignedLong(1 + lengthBits + rawOffset);
+                    (Integer.toUnsignedLong(len) << 32) | Integer.toUnsignedLong(1 + lengthBits + rawOffset);
         }
 
         if (prefix <= Constants.OFFSET_LONG_LIST) {

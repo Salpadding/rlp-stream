@@ -11,7 +11,7 @@ import java.util.function.BiFunction;
 
 
 @RequiredArgsConstructor
-public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
+final class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
     private final Constructor<T> constructor;
     private final Method[] setters;
     private final Class<?>[] setterTypes;
@@ -27,7 +27,7 @@ public class FieldsDecoder<T> implements BiFunction<byte[], Long, T> {
         int c = 0;
         while (true) {
             j = RlpStream.
-                iterateList(bin, streamId, j);
+                    iterateList(bin, streamId, j);
             if (StreamId.isEOF(j))
                 break;
             if (c >= children.length) {

@@ -15,7 +15,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-class RlpWriter {
+final class RlpWriter {
+    private RlpWriter() {
+    }
+
     static final int DEFAULT_INITIAL_CAP = 256;
 
     // write result = LIST_SIGN | prefix size | content size
@@ -24,21 +27,21 @@ class RlpWriter {
     // max prefix size = 1(length of length) + 4(length) = 5
     static final int MAX_PREFIX_SIZE = 5;
 
-    public static byte[] encode(Object o) {
+    static byte[] encode(Object o) {
         try (AbstractBuffer buf = new UnsafeBuf(DEFAULT_INITIAL_CAP)) {
             writeObject(buf, o);
             return buf.toByteArray();
         }
     }
 
-    public static void encode(Object o, DataOutput out) {
+    static void encode(Object o, DataOutput out) {
         try (AbstractBuffer buf = new UnsafeBuf(DEFAULT_INITIAL_CAP)) {
             writeObject(buf, o);
             buf.intoStream(out);
         }
     }
 
-    public static int writeLong(AbstractBuffer buf, long l) {
+    static int writeLong(AbstractBuffer buf, long l) {
         if (l == 0)
             return writeNull(buf);
         if (l == 1)
@@ -52,13 +55,13 @@ class RlpWriter {
         return prefixSize + size;
     }
 
-    public static int writeBytes(AbstractBuffer buf, byte[] bytes) {
+    static int writeBytes(AbstractBuffer buf, byte[] bytes) {
         if (bytes == null || bytes.length == 0)
             return writeNull(buf);
         return writeBytes(buf, bytes, 0, bytes.length);
     }
 
-    public static int writeBytes(AbstractBuffer buf, byte[] bytes, int offset, int size) {
+    static int writeBytes(AbstractBuffer buf, byte[] bytes, int offset, int size) {
         if (bytes == null || size == 0) {
             return writeNull(buf);
         }
@@ -72,23 +75,23 @@ class RlpWriter {
     }
 
     // true or false, 1 and 0 is frequently used
-    public static int writeOne(AbstractBuffer buf) {
+    static int writeOne(AbstractBuffer buf) {
         buf.write((byte) 0x01);
         return 1;
     }
 
-    public static int writeNull(AbstractBuffer buf) {
+    static int writeNull(AbstractBuffer buf) {
         buf.write((byte) 0x80);
         return 1;
     }
 
-    public static int writeEmptyList(AbstractBuffer buf) {
+    static int writeEmptyList(AbstractBuffer buf) {
         buf.write((byte) 0xc0);
         return 1;
     }
 
     @SneakyThrows
-    public static int writeBigInteger(AbstractBuffer buf, BigInteger bn) {
+    static int writeBigInteger(AbstractBuffer buf, BigInteger bn) {
         if (bn == null || bn.equals(BigInteger.ZERO))
             return writeNull(buf);
         if (bn.signum() < 0)
@@ -103,13 +106,13 @@ class RlpWriter {
         return writeBytes(buf, bytes);
     }
 
-    public static int writeRaw(AbstractBuffer buf, byte[] bytes) {
+    static int writeRaw(AbstractBuffer buf, byte[] bytes) {
         for (int i = 0; i < bytes.length; i++)
             buf.write(bytes[i]);
         return bytes.length;
     }
 
-    public static int writeElements(AbstractBuffer buf, byte[]... elements) {
+    static int writeElements(AbstractBuffer buf, byte[]... elements) {
         if (elements.length == 0)
             return writeEmptyList(buf);
 
@@ -122,7 +125,7 @@ class RlpWriter {
     }
 
     @SneakyThrows
-    public static int writeObject(AbstractBuffer buf, Object o) {
+    static int writeObject(AbstractBuffer buf, Object o) {
         if (o == null)
             return writeNull(buf);
         if (o instanceof RlpWritable) {
@@ -198,13 +201,13 @@ class RlpWriter {
                     throw new RlpEncodeException("RlpWriter of class " + clazz + " method " + method + " should be static");
                 }
                 if (
-                    method.getParameterCount() != 2 ||
-                        !(method.getParameterTypes()[0]).isAssignableFrom(clazz) ||
-                        !(method.getParameterTypes()[1]).isAssignableFrom(RlpBuffer.class) ||
-                        (!int.class.isAssignableFrom(method.getReturnType()) && !Integer.class.isAssignableFrom(method.getReturnType()))
+                        method.getParameterCount() != 2 ||
+                                !(method.getParameterTypes()[0]).isAssignableFrom(clazz) ||
+                                !(method.getParameterTypes()[1]).isAssignableFrom(RlpBuffer.class) ||
+                                (!int.class.isAssignableFrom(method.getReturnType()) && !Integer.class.isAssignableFrom(method.getReturnType()))
                 )
                     throw new RlpEncodeException(
-                        String.format("RlpWriter of class %s method should be int %s(%s obj, %s buf)", clazz.getName(), method.getName(), clazz.getName(), "RlpBuffer")
+                            String.format("RlpWriter of class %s method should be int %s(%s obj, %s buf)", clazz.getName(), method.getName(), clazz.getName(), "RlpBuffer")
                     );
                 w = new StaticMethodWriter(method);
                 Map<Class<?>, ObjectWriter> ws = new HashMap<>(OBJECT_WRITERS);
@@ -245,7 +248,7 @@ class RlpWriter {
     }
 
 
-    public static int writePrefix(AbstractBuffer buf, int size, boolean mono, boolean isList) {
+    static int writePrefix(AbstractBuffer buf, int size, boolean mono, boolean isList) {
         if (mono) {
             return 0;
         }

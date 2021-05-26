@@ -9,7 +9,7 @@ import java.io.Closeable;
 import java.io.DataOutput;
 import java.lang.reflect.Field;
 
-class UnsafeBuf extends AbstractBuffer implements Closeable {
+final class UnsafeBuf extends AbstractBuffer implements Closeable {
     public static Unsafe reflectGetUnsafe() {
         try {
             Field field = Unsafe.class.getDeclaredField("theUnsafe");
@@ -30,7 +30,7 @@ class UnsafeBuf extends AbstractBuffer implements Closeable {
     @Setter
     private int size;
 
-    public UnsafeBuf(int cap) {
+    UnsafeBuf(int cap) {
         this.pointer = unsafe.allocateMemory(cap);
         unsafe.setMemory(pointer, cap, (byte) 0);
         this.cap = cap;

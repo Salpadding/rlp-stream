@@ -7,7 +7,7 @@ import java.lang.reflect.Constructor;
 import java.util.function.BiFunction;
 
 
-public class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
+final class ConstructorDecoder<T> implements BiFunction<byte[], Long, T> {
     private final Constructor<T> constructor;
     private final Class<?>[] parameterTypes;
 

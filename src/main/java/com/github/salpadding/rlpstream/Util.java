@@ -2,7 +2,10 @@ package com.github.salpadding.rlpstream;
 
 import java.math.BigInteger;
 
-public class Util {
+public final class Util {
+    private Util() {
+    }
+
     /**
      * Return the passed in value as an unsigned byte array.
      *
@@ -10,7 +13,7 @@ public class Util {
      * @return a byte array without a leading zero byte if present in the signed encoding.
      */
     public static byte[] asUnsignedByteArray(
-        BigInteger value) {
+            BigInteger value) {
         byte[] bytes = value.toByteArray();
 
         if (bytes[0] == 0) {

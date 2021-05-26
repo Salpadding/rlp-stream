@@ -8,7 +8,10 @@ import java.nio.charset.StandardCharsets;
 import static com.github.salpadding.rlpstream.Constants.*;
 
 // stream is a inlined object combined with raw binary
-public class StreamId {
+public final class StreamId {
+    private StreamId() {
+    }
+
     public static boolean isEOF(long streamId) {
         return streamId == EOF;
     }

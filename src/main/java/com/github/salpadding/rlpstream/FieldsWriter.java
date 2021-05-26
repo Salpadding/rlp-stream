@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 import static com.github.salpadding.rlpstream.RlpWriter.writeObject;
 
 @RequiredArgsConstructor
-class FieldsWriter implements ObjectWriter {
+final class FieldsWriter implements ObjectWriter {
     private final Method[] getters;
     private final Field[] fields;
 

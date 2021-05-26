@@ -3,9 +3,8 @@ package com.github.salpadding.rlpstream;
 import com.github.salpadding.rlpstream.exceptions.RlpDecodeException;
 
 import java.math.BigInteger;
-import java.util.Collection;
 
-public class RlpList {
+public final class RlpList {
     private final byte[] bin;
     private final long streamId;
     private long[] children; // stream id of children
@@ -47,21 +46,9 @@ public class RlpList {
 
     RlpList(byte[] encoded, int rawOffset, int rawLimit, int bufSize) {
         this(
-            encoded,
-            RlpStream.decodeElement(encoded, rawOffset, rawLimit, true),
-            bufSize
-        );
-    }
-
-    public static RlpList fromEncoded(byte[] encoded) {
-        RlpList li = new RlpList(encoded, 0, encoded.length, 0);
-        li.encoded = encoded;
-        return li;
-    }
-
-    public static RlpList fromElements(Collection<byte[]> elements) {
-        return fromEncoded(
-            Rlp.encodeElements(elements)
+                encoded,
+                RlpStream.decodeElement(encoded, rawOffset, rawLimit, true),
+                bufSize
         );
     }
 

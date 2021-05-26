@@ -11,7 +11,10 @@ import java.util.Collection;
 import static com.github.salpadding.rlpstream.Constants.*;
 
 
-public class Rlp {
+public final class Rlp {
+    private Rlp() {
+    }
+
     // rlp list encode
     public static byte[] encodeBytes(byte[] srcData) {
         // [0x80]

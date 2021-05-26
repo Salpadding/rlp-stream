@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 import java.util.function.BiFunction;
 
 @RequiredArgsConstructor
-public class StaticMethodDecoder<T> implements BiFunction<byte[], Long, T> {
+final class StaticMethodDecoder<T> implements BiFunction<byte[], Long, T> {
     private final Method method;
 
     @Override

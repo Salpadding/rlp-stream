@@ -68,10 +68,10 @@ public final class Constants {
 
 
     // prefix size = 0
-    public static final long MONO_MASK = 0x80000000L;
-    public static final long OFFSET_MASK = 0x7fffffffL;
-    public static final long SIZE_MASK = 0x7fffffffL << 32;
+    static final long MONO_MASK = 0x80000000L;
+    static final long OFFSET_MASK = 0x7fffffffL;
+    static final long SIZE_MASK = 0x7fffffffL << 32;
     // EOF, unreachable, when mono size should be one
-    public static final long EOF = 0xFFFFFFFFFFFFFFFFL;
-    public static final long LIST_SIGN_MASK = 1L << 63;
+    static final long EOF = 0xFFFFFFFFFFFFFFFFL;
+    static final long LIST_SIGN_MASK = 1L << 63;
 }
