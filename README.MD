@@ -189,4 +189,7 @@ class Main {
 
 For more details, see src/test/java/examples
 
+TODO:
+
+allow annotation preprocess for @RlpProps
 
