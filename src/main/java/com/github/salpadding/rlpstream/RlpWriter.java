@@ -28,7 +28,7 @@ final class RlpWriter {
     static final int MAX_PREFIX_SIZE = 5;
 
     static byte[] encode(Object o) {
-        try (AbstractBuffer buf = new UnsafeBuf(DEFAULT_INITIAL_CAP)) {
+        try (AbstractBuffer buf = Rlp.useUnsafe ? new UnsafeBuf(DEFAULT_INITIAL_CAP) : BytesBuf.alloc(DEFAULT_INITIAL_CAP)) {
             writeObject(buf, o);
             return buf.toByteArray();
         }

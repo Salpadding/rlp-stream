@@ -12,6 +12,12 @@ import static com.github.salpadding.rlpstream.Constants.*;
 
 
 public final class Rlp {
+    static boolean useUnsafe = false;
+
+    public static void useUnsafe() {
+        useUnsafe = true;
+    }
+
     private Rlp() {
     }
 
